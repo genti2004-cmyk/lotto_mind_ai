@@ -103,15 +103,15 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   String _currentModeLabel() {
     switch (_tabIndex) {
       case 0:
-        return 'Normal';
+        return 'Basis';
       case 1:
-        return 'AI';
+        return 'Analyse';
       case 2:
-        return 'Jackpot';
+        return 'Pro';
       case 3:
         return 'System';
       default:
-        return 'AI';
+        return 'Analyse';
     }
   }
   @override
@@ -151,18 +151,18 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
                           icon: Icons.dataset_rounded,
                         ),
                         _MetricData(
-                          title: 'Profil',
-                          value: state.analysisProfileLabel,
-                          icon: Icons.tune_rounded,
-                        ),
-                        _MetricData(
-                          title: 'Qualität',
-                          value: state.analysisStrengthLabel,
-                          icon: Icons.insights_rounded,
-                        ),
-                        _MetricData(
-                          title: 'Fenster',
+                          title: 'Zielziehung',
                           value: state.analysisDrawFilterLabel,
+                          icon: Icons.event_available_rounded,
+                        ),
+                        _MetricData(
+                          title: '1. Strategie verstehen',
+                          value: _currentModeLabel(),
+                          icon: Icons.route_rounded,
+                        ),
+                        _MetricData(
+                          title: 'Datenfenster',
+                          value: state.analysisWindowLabel,
                           icon: Icons.calendar_view_week_rounded,
                         ),
                       ],
@@ -171,6 +171,13 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
                     _ModeTabs(
                       index: _tabIndex,
                       onChanged: _goToTab,
+                    ),
+                    const SizedBox(height: 12),
+                    _GeneratorFlowGuide(
+                      modeLabel: _currentModeLabel(),
+                      targetLabel: state.analysisDrawFilterLabel,
+                      hasCurrentTip: state.lastGeneratedTip != null &&
+                          state.lastGeneratedTip!.isNotEmpty,
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -465,7 +472,7 @@ class _HeroHeader extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Smart Generator für Zufall, KI-Analyse, Jackpot-Strategie und Systemspiele.',
+                          'Erstelle Tipps in einem klaren Ablauf: Ziel wählen, Strategie nutzen, Tipp speichern und später prüfen.',
                           style: TextStyle(
                             fontSize: 13,
                             height: 1.45,
@@ -668,6 +675,116 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
+
+class _GeneratorFlowGuide extends StatelessWidget {
+  final String modeLabel;
+  final String targetLabel;
+  final bool hasCurrentTip;
+
+  const _GeneratorFlowGuide({
+    required this.modeLabel,
+    required this.targetLabel,
+    required this.hasCurrentTip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _SubCard(
+      title: 'So funktioniert der Generator',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _FlowStep(
+            number: '1',
+            title: 'Ziel wählen',
+            text: targetLabel == 'Alle'
+                ? 'Wähle im Analyse-Modus Mittwoch oder Samstag, wenn der Tipp eindeutig zugeordnet werden soll.'
+                : 'Aktuelle Zielauswahl: $targetLabel.',
+          ),
+          const SizedBox(height: 10),
+          _FlowStep(
+            number: '2',
+            title: 'Strategie nutzen',
+            text: 'Aktueller Bereich: $modeLabel.',
+          ),
+          const SizedBox(height: 10),
+          _FlowStep(
+            number: '3',
+            title: 'Tipp speichern',
+            text: hasCurrentTip
+                ? 'Ein Tipp ist vorhanden. Speichere ihn in Meine Tipps, damit er später geprüft wird.'
+                : 'Erzeuge zuerst einen Tipp. Danach erscheint er unten als aktueller Tipp.',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FlowStep extends StatelessWidget {
+  final String number;
+  final String title;
+  final String text;
+
+  const _FlowStep({
+    required this.number,
+    required this.title,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            number,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.35,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ModeTabItem {
   final String label;
   final IconData icon;
@@ -690,9 +807,9 @@ class _ModeTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = [
-      _ModeTabItem(label: 'Normal', icon: Icons.casino_rounded),
-      _ModeTabItem(label: 'AI', icon: Icons.psychology_alt_rounded),
-      _ModeTabItem(label: 'Jackpot', icon: Icons.local_fire_department_rounded),
+      _ModeTabItem(label: 'Basis', icon: Icons.casino_rounded),
+      _ModeTabItem(label: 'Analyse', icon: Icons.psychology_alt_rounded),
+      _ModeTabItem(label: 'Pro', icon: Icons.local_fire_department_rounded),
       _ModeTabItem(label: 'System', icon: Icons.grid_view_rounded),
     ];
 
@@ -911,18 +1028,18 @@ class _NormalPanel extends StatelessWidget {
     final lastTip = state.lastGeneratedTip;
 
     return _PanelCard(
-      title: 'Normaler Generator',
-      subtitle: 'Schneller Spielschein ohne Analysefilter – direkt erzeugen, prüfen und speichern.',
+      title: 'Basis-Tipp',
+      subtitle: 'Einfacher Zufallstipp für Nutzer, die schnell einen spielbereiten Tipp speichern möchten.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SubCard(
-            title: 'Schnellstart',
+            title: '1. Tipp erzeugen',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Für einen schnellen Start wird hier ein klassischer Zufallstipp erzeugt. Ohne Sonderlogik, ohne Verzögerung, direkt spielbereit.',
+                  'Der Basis-Tipp nutzt keine Expertenlogik. Er ist ideal zum schnellen Start und kann danach direkt in Meine Tipps gespeichert werden.',
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.45,
@@ -944,7 +1061,7 @@ class _NormalPanel extends StatelessWidget {
                     SizedBox(
                       width: 180,
                       child: PrimaryButton(
-                        label: 'Speichern',
+                        label: 'In Meine Tipps speichern',
                         icon: Icons.bookmark_add_rounded,
                         onPressed: onSave,
                       ),
@@ -964,13 +1081,13 @@ class _NormalPanel extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _SubCard(
-            title: 'Status',
+            title: '2. Aktueller Stand',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _InlineInfo(
-                  label: 'Modus',
-                  value: 'Schneller Zufallstipp',
+                  label: 'Strategie',
+                  value: 'Basis',
                 ),
                 const SizedBox(height: 6),
                 _InlineInfo(
@@ -1108,13 +1225,13 @@ class _AiPanel extends StatelessWidget {
     final bestSimulation = state.bestAiTipWindow?.summary;
 
     return _PanelCard(
-      title: 'KI-Analyse',
-      subtitle: 'Analysezeitraum, Profil, AI-Bewertung und AI-Pro-Kandidat in einem stabilen Flow.',
+      title: 'Analyse-Tipp',
+      subtitle: 'Für Nutzer, die Ziehungsverlauf, Häufigkeiten und Intervall-Hinweise in die Tipp-Erstellung einbeziehen möchten.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SubCard(
-            title: 'Analyse-Steuerung',
+            title: '1. Ziel und Datenfenster wählen',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1375,13 +1492,13 @@ class _AiPanel extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _SubCard(
-            title: 'AI-Bewertung',
+            title: '2. Modell-Hinweise',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _InlineInfo(label: 'Titel', value: ai.title),
                 const SizedBox(height: 6),
-                _InlineInfo(label: 'Confidence', value: ai.confidence),
+                _InlineInfo(label: 'Sicherheit', value: ai.confidence),
                 const SizedBox(height: 12),
                 _ConfidenceBar(confidenceText: ai.confidence),
                 const SizedBox(height: 12),
@@ -1403,7 +1520,7 @@ class _AiPanel extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _SubCard(
-            title: 'AI-Pro-Kandidat',
+            title: '3. Tipp übernehmen',
             child: bestTip.length != 6
                 ? const Text(
               'Noch kein AI-Pro-Tipp verfügbar.',
@@ -1425,7 +1542,7 @@ class _AiPanel extends StatelessWidget {
                 ],
                 const SizedBox(height: 12),
                 PrimaryButton(
-                  label: 'AI Pro Tipp übernehmen',
+                  label: 'Analyse-Tipp übernehmen',
                   icon: Icons.download_done_rounded,
                   onPressed: onApplyBest,
                 ),
@@ -1459,8 +1576,8 @@ class _JackpotPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _PanelCard(
-      title: 'Jackpot-Fokus',
-      subtitle: 'Aggressiverer Flow für chancenorientierte Tipps auf Basis deiner KI-Analyse.',
+      title: 'Pro-Strategie',
+      subtitle: 'Erweiterter Modus für chancenorientierte Varianten, Simulationen und spätere Pro/Premium-Funktionen.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1472,7 +1589,7 @@ class _JackpotPanel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Diese Ansicht nutzt denselben stabilen Analysekern, setzt aber stärker auf seltenere, chancenorientierte Muster.',
+                  'Diese Ansicht nutzt denselben stabilen Analysekern, zeigt aber bewusst mehr Expertenfunktionen und Simulationen.',
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.45,
@@ -1483,19 +1600,19 @@ class _JackpotPanel extends StatelessWidget {
                 const SizedBox(height: 12),
                 _InlineInfo(
                   label: 'Strategie',
-                  value: 'KI-Analyse + AI Pro + Gewinnsimulation',
+                  value: 'Analyse + Simulation',
                 ),
                 const SizedBox(height: 6),
                 _InlineInfo(
                   label: 'Ziel',
-                  value: 'aggressiver, jackpot-orientierter Stil',
+                  value: 'Pro-Variante mit mehr Details',
                 ),
               ],
             ),
           ),
           const SizedBox(height: 14),
           PrimaryButton(
-            label: 'Jackpot-Tipp berechnen',
+            label: 'Pro-Tipp berechnen',
             icon: Icons.local_fire_department_rounded,
             onPressed: onGenerate,
           ),
@@ -1570,7 +1687,7 @@ class _SystemEntryPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return _PanelCard(
       title: 'Systemspiele',
-      subtitle: 'VEW und Vollsystem laufen in einem eigenen, sauberen Bereich.',
+      subtitle: 'Systemscheine und Intervall-Systeme laufen in einem eigenen Bereich für fortgeschrittene Nutzer.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1599,7 +1716,7 @@ class _SystemEntryPanel extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           const Text(
-            'Systemspiele haben ihren eigenen Flow: wählen → Zahlen setzen → erzeugen → PDF → Abgabe.',
+            'Systemspiele haben einen eigenen Ablauf: System wählen, Zahlen setzen, Reihen erzeugen, speichern oder exportieren.',
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
@@ -1644,7 +1761,7 @@ class _CurrentTipPanel extends StatelessWidget {
 
     return _PanelCard(
       title: 'Aktueller Tipp',
-      subtitle: 'Der zuletzt erzeugte Tipp mit Superzahl, Schnellaktionen und Bewertung.',
+      subtitle: 'Hier siehst du den zuletzt erzeugten Tipp. Speichere ihn, damit er später unter Meine Tipps geprüft werden kann.',
       child: tip == null || tip.isEmpty
           ? const Text(
         'Noch kein Tipp generiert.',
@@ -1685,7 +1802,7 @@ class _CurrentTipPanel extends StatelessWidget {
               SizedBox(
                 width: 180,
                 child: PrimaryButton(
-                  label: 'Speichern',
+                  label: 'In Meine Tipps speichern',
                   icon: Icons.bookmark_add_rounded,
                   onPressed: onSave,
                 ),
