@@ -14,6 +14,7 @@ import '../../settings/domain/app_edition.dart';
 import '../../settings/domain/feature_gate.dart';
 import '../../settings/domain/rule_profile.dart';
 import '../../tips/domain/tip_evaluation_result.dart';
+import '../../evaluation/services/tip_match_service.dart';
 import '../domain/analysis_rule_set.dart';
 import '../domain/lotto_generator_service.dart';
 import '../domain/lotto_tip.dart';
@@ -332,6 +333,8 @@ class WinRangeEvaluation {
 }
 
 class LottoAppState extends ChangeNotifier {
+  static const TipMatchService _tipMatchService = TipMatchService();
+
   final double _stakePerTip = 1.20;   // ✅ HIER rein
   double get stakePerTip => _stakePerTip;
 
@@ -3548,8 +3551,8 @@ class LottoAppState extends ChangeNotifier {
 
     for (var i = 0; i < matchingTips.length; i++) {
       final tip = matchingTips[i];
-      final numbers = _normalizeLottoRow(tip.numbers);
-      final row = _buildTipRowEvaluation(
+      final numbers = _tipMatchService.normalizeLottoRow(tip.numbers);
+      final row = _tipMatchService.buildRowEvaluation(
         rowIndex: 1,
         numbers: numbers,
         draw: draw,
@@ -3565,13 +3568,13 @@ class LottoAppState extends ChangeNotifier {
           baseNumbers: numbers,
           superNumber: tip.superNumber,
           rows: <TipRowEvaluation>[row],
-          spiel77: _buildAdditionalLotteryEvaluation(
+          spiel77: _tipMatchService.evaluateAdditionalLottery(
             name: 'Spiel 77',
             tipNumber: null,
             drawNumber: draw.spiel77,
             expectedLength: 7,
           ),
-          super6: _buildAdditionalLotteryEvaluation(
+          super6: _tipMatchService.evaluateAdditionalLottery(
             name: 'Super 6',
             tipNumber: null,
             drawNumber: draw.super6,
@@ -3581,7 +3584,7 @@ class LottoAppState extends ChangeNotifier {
       );
     }
 
-    _tipEvaluationResults = _sortTipEvaluationResults(results);
+    _tipEvaluationResults = _tipMatchService.sortResults(results);
     _rebuildCheckResults(notify: false);
     notifyListeners();
     return List<TipEvaluationResult>.unmodifiable(_tipEvaluationResults);
@@ -3591,7 +3594,7 @@ class LottoAppState extends ChangeNotifier {
     final draw = _selectedDrawForCheck;
     if (draw == null) return null;
 
-    final baseNumbers = _normalizeLottoRow(_systemBaseNumbers);
+    final baseNumbers = _tipMatchService.normalizeLottoRow(_systemBaseNumbers);
     final sourceRows = _systemRows.isNotEmpty
         ? _systemRows
         : (baseNumbers.length >= 6 ? <List<int>>[baseNumbers] : <List<int>>[]);
@@ -3601,7 +3604,7 @@ class LottoAppState extends ChangeNotifier {
     final rows = <TipRowEvaluation>[];
     for (var i = 0; i < sourceRows.length; i++) {
       rows.add(
-        _buildTipRowEvaluation(
+        _tipMatchService.buildRowEvaluation(
           rowIndex: i + 1,
           numbers: sourceRows[i],
           draw: draw,
@@ -3620,13 +3623,13 @@ class LottoAppState extends ChangeNotifier {
       baseNumbers: baseNumbers,
       superNumber: superZahl,
       rows: rows,
-      spiel77: _buildAdditionalLotteryEvaluation(
+      spiel77: _tipMatchService.evaluateAdditionalLottery(
         name: 'Spiel 77',
         tipNumber: spiel77,
         drawNumber: draw.spiel77,
         expectedLength: 7,
       ),
-      super6: _buildAdditionalLotteryEvaluation(
+      super6: _tipMatchService.evaluateAdditionalLottery(
         name: 'Super 6',
         tipNumber: super6,
         drawNumber: draw.super6,
@@ -3634,7 +3637,7 @@ class LottoAppState extends ChangeNotifier {
       ),
     );
 
-    _tipEvaluationResults = _sortTipEvaluationResults(<TipEvaluationResult>[
+    _tipEvaluationResults = _tipMatchService.sortResults(<TipEvaluationResult>[
       result,
       ..._tipEvaluationResults,
     ]).take(100).toList(growable: false);
@@ -3643,113 +3646,7 @@ class LottoAppState extends ChangeNotifier {
     return result;
   }
 
-  TipRowEvaluation _buildTipRowEvaluation({
-    required int rowIndex,
-    required List<int> numbers,
-    required DrawResult draw,
-    required int? tipSuperNumber,
-  }) {
-    final normalizedNumbers = _normalizeLottoRow(numbers);
-    final normalizedDraw = _normalizeLottoRow(draw.numbers);
-    final matched = normalizedNumbers
-        .where((number) => normalizedDraw.contains(number))
-        .toSet()
-        .toList()
-      ..sort();
 
-    final drawSuper = draw.superNumber;
-    final superHit = tipSuperNumber != null &&
-        drawSuper != null &&
-        tipSuperNumber == drawSuper;
-
-    return TipRowEvaluation(
-      rowIndex: rowIndex,
-      numbers: normalizedNumbers,
-      drawNumbers: normalizedDraw,
-      matchedNumbers: matched,
-      tipSuperNumber: tipSuperNumber,
-      drawSuperNumber: drawSuper,
-      prizeClass: LottoPrizeClass.fromHits(
-        hits: matched.length,
-        superHit: superHit,
-      ),
-    );
-  }
-
-  AdditionalLotteryEvaluation _buildAdditionalLotteryEvaluation({
-    required String name,
-    required String? tipNumber,
-    required String? drawNumber,
-    required int expectedLength,
-  }) {
-    final tip = _digitsOnlyForEvaluation(tipNumber);
-    final draw = _digitsOnlyForEvaluation(drawNumber);
-    final played = tip.isNotEmpty;
-
-    if (!played) {
-      return AdditionalLotteryEvaluation(
-        name: name,
-        tipNumber: null,
-        drawNumber: draw.isEmpty ? null : draw.padLeft(expectedLength, '0'),
-        played: false,
-        exactMatch: false,
-        matchedSuffixDigits: 0,
-      );
-    }
-
-    final normalizedTip = tip.padLeft(expectedLength, '0');
-    final normalizedDraw = draw.isEmpty ? null : draw.padLeft(expectedLength, '0');
-
-    return AdditionalLotteryEvaluation(
-      name: name,
-      tipNumber: normalizedTip,
-      drawNumber: normalizedDraw,
-      played: true,
-      exactMatch: normalizedDraw != null && normalizedTip == normalizedDraw,
-      matchedSuffixDigits: normalizedDraw == null
-          ? 0
-          : _matchingSuffixDigits(normalizedTip, normalizedDraw),
-    );
-  }
-
-  List<TipEvaluationResult> _sortTipEvaluationResults(
-      List<TipEvaluationResult> results,
-      ) {
-    final sorted = List<TipEvaluationResult>.from(results)
-      ..sort((a, b) {
-        final aClass = a.bestRow?.prizeClass.classNumber ?? 99;
-        final bClass = b.bestRow?.prizeClass.classNumber ?? 99;
-        final classCompare = aClass.compareTo(bClass);
-        if (classCompare != 0) return classCompare;
-        final hitCompare = b.bestHitCount.compareTo(a.bestHitCount);
-        if (hitCompare != 0) return hitCompare;
-        return b.evaluatedAt.compareTo(a.evaluatedAt);
-      });
-    return sorted;
-  }
-
-  List<int> _normalizeLottoRow(List<int> input) {
-    final normalized = input
-        .where((number) => number >= 1 && number <= 49)
-        .toSet()
-        .toList()
-      ..sort();
-    return normalized;
-  }
-
-  String _digitsOnlyForEvaluation(String? value) {
-    return (value ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-  }
-
-  int _matchingSuffixDigits(String a, String b) {
-    final max = a.length < b.length ? a.length : b.length;
-    var count = 0;
-    for (var i = 1; i <= max; i++) {
-      if (a[a.length - i] != b[b.length - i]) break;
-      count++;
-    }
-    return count;
-  }
 
   // ================= ZUSATZSPIELE FINAL =================
   // Liefert immer sichtbare Werte fuer Systemspiel / Zusatzspiele.
