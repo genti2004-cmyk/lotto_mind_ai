@@ -7,6 +7,7 @@ import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_title.dart';
 import '../../generator/provider/lotto_app_state.dart';
 import '../domain/draw_result.dart';
+import '../domain/draw_type.dart';
 import '../domain/tip_check_result.dart';
 
 class DrawResultsScreen extends StatefulWidget {
@@ -175,6 +176,20 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
     final selectedDraw = state.selectedDrawForCheck;
     final results = state.latestCheckResults;
     final latestDraw = state.drawResults.isEmpty ? null : state.drawResults.first;
+    final latestWednesday = _latestDrawForType(
+      state.drawResults,
+      DrawType.wednesday,
+    );
+    final latestSaturday = _latestDrawForType(
+      state.drawResults,
+      DrawType.saturday,
+    );
+    final wednesdayCount = state.drawResults
+        .where((draw) => DrawTypeX.fromDate(draw.drawDate) == DrawType.wednesday)
+        .length;
+    final saturdayCount = state.drawResults
+        .where((draw) => DrawTypeX.fromDate(draw.drawDate) == DrawType.saturday)
+        .length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -183,15 +198,19 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
           children: [
             const SectionTitle(
-              title: 'Ziehungen & Prüfung',
+              title: 'Ziehungen',
               subtitle:
-              'Lottozahlen importieren, manuell ergänzen und gespeicherte Tipps prüfen',
+              'Lottozahlen aktualisieren, kontrollieren und als Grundlage für deine Tipps nutzen',
             ),
             const SizedBox(height: 20),
 
             _HeroCard(
               totalDraws: state.drawResults.length,
               latestDraw: latestDraw,
+              latestWednesday: latestWednesday,
+              latestSaturday: latestSaturday,
+              wednesdayCount: wednesdayCount,
+              saturdayCount: saturdayCount,
               isImporting: state.isImporting,
               progress: state.importProgress,
               progressLabel: state.importCurrentYear == null
@@ -208,9 +227,9 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
               ),
 
             _Panel(
-              title: 'Automatische Lotto-Zahlen-Suche',
+              title: 'Ziehungen aktualisieren',
               subtitle:
-              'Neue und historische Ziehungen direkt in die App laden',
+              'Die letzten Wochen schnell laden oder historische Daten nachziehen',
               child: Column(
                 children: [
                   PrimaryButton(
@@ -229,7 +248,7 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
                     children: [
                       Expanded(
                         child: PrimaryButton(
-                          label: 'Mittwoch ab 2000',
+                          label: 'Mittwoch-Verlauf',
                           icon: Icons.history_rounded,
                           onPressed: state.isImporting
                               ? null
@@ -243,7 +262,7 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: PrimaryButton(
-                          label: 'Samstag ab 1955',
+                          label: 'Samstag-Verlauf',
                           icon: Icons.history_rounded,
                           onPressed: state.isImporting
                               ? null
@@ -284,9 +303,9 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
             const SizedBox(height: 18),
 
             _Panel(
-              title: 'Manuelle Ziehung',
+              title: 'Ziehung manuell ergänzen',
               subtitle:
-              'Fehlende Zusatzinformationen wie Superzahl, Spiel 77 und SUPER 6 ergänzen',
+              'Für einzelne Ziehungen Zahlen, Superzahl, Spiel 77 und SUPER 6 eintragen',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -353,7 +372,7 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
 
             _Panel(
               title: 'Gespeicherte Ziehungen',
-              subtitle: 'Gespeicherte Ziehungen mit allen verfügbaren Zusatzinfos',
+              subtitle: 'Nach Datum sortiert. Mittwoch und Samstag sind klar gekennzeichnet.',
               child: state.drawResults.isEmpty
                   ? const _EmptyText('Keine Ziehungen vorhanden.')
                   : Column(
@@ -379,8 +398,8 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
             const SizedBox(height: 18),
 
             _Panel(
-              title: 'Prüfergebnisse',
-              subtitle: 'Gespeicherte Tipps gegen die gewählte Ziehung prüfen',
+              title: 'Prüfung mit ausgewählter Ziehung',
+              subtitle: 'Wähle eine Ziehung aus der Liste, um passende gespeicherte Tipps zu prüfen.',
               child: selectedDraw == null
                   ? const _EmptyText('Bitte zuerst eine Ziehung auswählen.')
                   : Column(
@@ -414,6 +433,10 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
 class _HeroCard extends StatelessWidget {
   final int totalDraws;
   final DrawResult? latestDraw;
+  final DrawResult? latestWednesday;
+  final DrawResult? latestSaturday;
+  final int wednesdayCount;
+  final int saturdayCount;
   final bool isImporting;
   final double progress;
   final String progressLabel;
@@ -421,6 +444,10 @@ class _HeroCard extends StatelessWidget {
   const _HeroCard({
     required this.totalDraws,
     required this.latestDraw,
+    required this.latestWednesday,
+    required this.latestSaturday,
+    required this.wednesdayCount,
+    required this.saturdayCount,
     required this.isImporting,
     required this.progress,
     required this.progressLabel,
@@ -455,7 +482,7 @@ class _HeroCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
             child: const Text(
-              'Prüfung Pro',
+              'Datenstatus',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -465,7 +492,7 @@ class _HeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           const Text(
-            'Import, Kontrolle und Prüfung',
+            'Ziehungen im Überblick',
             style: TextStyle(
               color: Colors.white,
               fontSize: 24,
@@ -475,8 +502,8 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             latestDraw == null
-                ? 'Noch keine Ziehungen gespeichert'
-                : 'Letzte Ziehung: ${_formatDate(latestDraw!.drawDate)}',
+                ? 'Noch keine Ziehungen gespeichert.'
+                : 'Letzte gespeicherte Ziehung: ${_drawTypeLabel(latestDraw!.drawDate)} • ${_formatDate(latestDraw!.drawDate)}',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,
@@ -489,15 +516,37 @@ class _HeroCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _HeroMetric(
-                  label: 'Ziehungen',
+                  label: 'Mittwoch',
+                  value: latestWednesday == null
+                      ? '-'
+                      : _formatDateShort(latestWednesday!.drawDate),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _HeroMetric(
+                  label: 'Samstag',
+                  value: latestSaturday == null
+                      ? '-'
+                      : _formatDateShort(latestSaturday!.drawDate),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _HeroMetric(
+                  label: 'Gesamt',
                   value: '$totalDraws',
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _HeroMetric(
-                  label: 'Status',
-                  value: isImporting ? 'Import' : 'Bereit',
+                  label: 'Mi/Sa',
+                  value: '$wednesdayCount/$saturdayCount',
                 ),
               ),
             ],
@@ -597,7 +646,7 @@ class _LatestDrawCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Letzte Ziehung',
+            'Letzte gespeicherte Ziehung',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
@@ -606,7 +655,7 @@ class _LatestDrawCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            _formatDate(draw.drawDate),
+            '${_drawTypeLabel(draw.drawDate)} • ${_formatDate(draw.drawDate)}',
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w700,
@@ -762,7 +811,7 @@ class _DrawTile extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    _formatDate(draw.drawDate),
+                    '${_drawTypeLabel(draw.drawDate)} • ${_formatDate(draw.drawDate)}',
                     style: const TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 15,
@@ -949,4 +998,20 @@ String _formatDate(DateTime value) {
   final day = value.day.toString().padLeft(2, '0');
   final month = value.month.toString().padLeft(2, '0');
   return '$day.$month.${value.year}';
+}
+String _formatDateShort(DateTime value) {
+  final day = value.day.toString().padLeft(2, '0');
+  final month = value.month.toString().padLeft(2, '0');
+  return '$day.$month.';
+}
+
+String _drawTypeLabel(DateTime date) {
+  return DrawTypeX.fromDate(date).label;
+}
+
+DrawResult? _latestDrawForType(List<DrawResult> draws, DrawType type) {
+  for (final draw in draws) {
+    if (DrawTypeX.fromDate(draw.drawDate) == type) return draw;
+  }
+  return null;
 }
