@@ -144,15 +144,43 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 
   Future<void> _saveCurrentTip(List<int> numbers) async {
+    final appState = context.read<LottoAppState>();
+    final superNumber = _sameNumbers(appState.lastGeneratedTip, numbers)
+        ? appState.lastGeneratedSuperNumber
+        : null;
+
+    await appState.saveTipFromNumbers(
+      numbers,
+      superNumber: superNumber,
+      source: 'tracking_pro',
+    );
+
     final tip = _service.createTip(
       title: 'Aktueller Tipp ${_dateFormat.format(DateTime.now())}',
       type: TrackedTipType.ai,
       baseNumbers: numbers,
       rows: [numbers],
+      superNumber: superNumber,
       stakePerDraw: LottoWinValueModel.stakePerLottoRow,
     );
     await _service.saveTip(tip);
     await _load();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Tipp wurde in Meine Tipps und Tracking Pro gespeichert.')),
+    );
+  }
+
+  bool _sameNumbers(List<int>? a, List<int> b) {
+    if (a == null || a.length != b.length) return false;
+    final left = List<int>.from(a)..sort();
+    final right = List<int>.from(b)..sort();
+    for (var i = 0; i < left.length; i++) {
+      if (left[i] != right[i]) return false;
+    }
+    return true;
   }
 
   Future<void> _deleteTip(String id) async {
@@ -208,7 +236,7 @@ class _CreateFromCurrentTipCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            canSave ? 'Speichert den zuletzt generierten 6er-Tipp im Tracking.' : 'Noch kein 6er-Tipp im Generator vorhanden.',
+            canSave ? 'Speichert den zuletzt generierten 6er-Tipp in Meine Tipps und zusätzlich im Tracking.' : 'Noch kein 6er-Tipp im Generator vorhanden.',
             style: TextStyle(color: Colors.white.withOpacity(0.72)),
           ),
           const SizedBox(height: 12),
@@ -219,7 +247,7 @@ class _CreateFromCurrentTipCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: canSave ? () => onSave(tip) : null,
               icon: const Icon(Icons.save_rounded),
-              label: const Text('In Tracking speichern'),
+              label: const Text('In Meine Tipps + Tracking speichern'),
             ),
           ),
         ],

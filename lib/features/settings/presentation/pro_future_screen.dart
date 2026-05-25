@@ -18,15 +18,15 @@ class ProFutureScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pro / Future'),
+        title: const Text('Normal / Pro / Premium'),
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
           children: [
             const SectionTitle(
-              title: 'Editionen',
-              subtitle: 'Interne Freischaltung für Free, Pro und Future',
+              title: 'Produktstufen',
+              subtitle: 'Interne Grundlage für Normal, Pro und Premium',
             ),
             const SizedBox(height: 20),
             _EditionCard(
@@ -63,17 +63,17 @@ class ProFutureScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   _FeatureRow(
-                    label: 'Erweiterte Statistik',
+                    label: 'Erweiterte Statistiken',
                     enabled: gate.canUseAdvancedStatistics,
                   ),
                   const SizedBox(height: 10),
                   _FeatureRow(
-                    label: 'Erweiterte Historie',
+                    label: 'Erweiterter Verlauf',
                     enabled: gate.canUseAdvancedHistory,
                   ),
                   const SizedBox(height: 10),
                   _FeatureRow(
-                    label: 'Regelprofile',
+                    label: 'Premium-Regelprofile',
                     enabled: gate.canUseRuleProfiles,
                   ),
                   const SizedBox(height: 10),
@@ -83,7 +83,7 @@ class ProFutureScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   _FeatureRow(
-                    label: 'Export Center',
+                    label: 'Premium Export Center',
                     enabled: gate.canUseExportCenter,
                   ),
                 ],
@@ -97,7 +97,7 @@ class ProFutureScreen extends StatelessWidget {
                   _BlockHeader(
                     title: 'Hinweis',
                     subtitle:
-                    'Diese Stufe ist bewusst lokal aufgebaut. Später kann dieselbe Struktur mit In-App-Käufen, Lizenzprüfung oder Cloud-Account verbunden werden.',
+                    'Diese Stufen sind bewusst lokal vorbereitet. Später kann dieselbe Struktur mit In-App-Käufen, Lizenzprüfung oder Cloud-Account verbunden werden.',
                   ),
                 ],
               ),

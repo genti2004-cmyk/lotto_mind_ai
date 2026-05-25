@@ -2154,23 +2154,37 @@ class LottoAppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveLastTip({String source = 'analysis'}) async {
-    if (_lastGeneratedTip == null) return;
+  Future<bool> saveTipFromNumbers(
+    List<int> numbers, {
+    int? superNumber,
+    String source = 'manual',
+  }) async {
+    final normalizedNumbers = List<int>.from(numbers)
+      ..removeWhere((number) => number < 1 || number > 49)
+      ..sort();
 
-    final key = _lastGeneratedTip!.join('-');
-    final exists = _savedTips.any((tip) => tip.numbers.join('-') == key);
-    if (exists) return;
+    if (normalizedNumbers.length != 6) return false;
+
+    final normalizedSuperNumber =
+        superNumber != null && superNumber >= 0 && superNumber <= 9
+            ? superNumber
+            : null;
+
+    final exists = _savedTips.any((tip) {
+      final tipNumbers = List<int>.from(tip.numbers)..sort();
+      return tipNumbers.join('-') == normalizedNumbers.join('-') &&
+          tip.superNumber == normalizedSuperNumber;
+    });
+
+    if (exists) return false;
 
     _savedTips.insert(
       0,
       LottoTip(
-        id: DateTime
-            .now()
-            .microsecondsSinceEpoch
-            .toString(),
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
         createdAt: DateTime.now(),
-        numbers: List<int>.from(_lastGeneratedTip!),
-        superNumber: _lastGeneratedSuperNumber,
+        numbers: normalizedNumbers,
+        superNumber: normalizedSuperNumber,
         source: source,
       ),
     );
@@ -2178,6 +2192,17 @@ class LottoAppState extends ChangeNotifier {
     _rebuildCheckResults(notify: false);
     await _saveToStorage();
     notifyListeners();
+    return true;
+  }
+
+  Future<void> saveLastTip({String source = 'analysis'}) async {
+    if (_lastGeneratedTip == null) return;
+
+    await saveTipFromNumbers(
+      _lastGeneratedTip!,
+      superNumber: _lastGeneratedSuperNumber,
+      source: source,
+    );
   }
 
   void setGeneratedNumbers(List<int> numbers, {int? superNumber}) {
@@ -2288,39 +2313,25 @@ class LottoAppState extends ChangeNotifier {
   }
 
   Future<int> autoImportLatestDraws() async {
+    const recentWeeks = 8;
     _beginImport(label: 'Automatische Prüfung', totalYears: 1);
 
     try {
-      final all = await _importService.fetchLatestResults();
+      final all = await _importService.fetchRecentResults(weeks: recentWeeks);
 
-      final modern = all.where(
+      final toImport = all.where(
             (d) =>
         d.drawDate.weekday == DateTime.wednesday ||
             d.drawDate.weekday == DateTime.saturday,
-      ).toList();
-
-      DrawResult? latestWednesday;
-      DrawResult? latestSaturday;
-
-      for (final draw in modern) {
-        if (draw.drawDate.weekday == DateTime.wednesday) {
-          latestWednesday ??= draw;
-        } else if (draw.drawDate.weekday == DateTime.saturday) {
-          latestSaturday ??= draw;
-        }
-      }
-
-      final toImport = <DrawResult>[
-        ?latestWednesday,
-        ?latestSaturday,
-      ];
+      ).toList()
+        ..sort((a, b) => b.drawDate.compareTo(a.drawDate));
 
       final inserted = await _mergeImportedDraws(toImport);
 
       _importProcessedYears = 1;
       _lastImportMessage = inserted == 0
-          ? 'Automatische Prüfung: keine neuen Mittwoch-/Samstag-Ziehungen.'
-          : 'Automatische Prüfung: $inserted neue Ziehung(en) importiert.';
+          ? 'Automatische Prüfung: keine neuen Ziehungen der letzten $recentWeeks Wochen.'
+          : 'Automatische Prüfung: $inserted Ziehung(en) der letzten $recentWeeks Wochen importiert.';
       return inserted;
     } finally {
       _finishImport();
@@ -3384,18 +3395,23 @@ class LottoAppState extends ChangeNotifier {
   }
 
   DrawResult _mergeDrawMetadata(DrawResult current, DrawResult incoming) {
-    // Import-Daten duerfen eine bestehende gueltige Zahlenreihe am selben Datum
-    // nicht ungefragt ueberschreiben. Fehlende Zusatzdaten werden aber ergaenzt.
+    // Frische Import-Daten sind fuer dieses Datum massgeblich.
+    // Wichtig: Wenn der Import KEINE Superzahl findet, darf eine frueher falsch
+    // gespeicherte "6" nicht weiterleben. Deshalb wird Superzahl bewusst auch
+    // auf null gesetzt. Spiel 77 / SUPER 6 bleiben dagegen erhalten, wenn die
+    // neue Quelle sie nicht liefert.
     return current.copyWith(
-      superNumber: current.superNumber ?? incoming.superNumber,
-      spiel77: current.spiel77 ?? incoming.spiel77,
-      super6: current.super6 ?? incoming.super6,
+      superNumber: incoming.superNumber,
+      clearSuperNumber: incoming.superNumber == null,
+      spiel77: incoming.spiel77 ?? current.spiel77,
+      super6: incoming.super6 ?? current.super6,
     );
   }
 
   DrawResult _replaceManualDraw(DrawResult current, DrawResult incoming) {
     // Manuelle Eingabe ist eine bewusste Korrektur fuer dieses Datum.
-    // Daher Zahlen + Zusatzdaten aus der Eingabe uebernehmen, fehlende Zusatzdaten erhalten.
+    // Wenn das Superzahl-Feld leer bleibt, wird eine alte/falsche Superzahl
+    // geloescht statt behalten. Spiel 77 / SUPER 6 bleiben erhalten, wenn leer.
     return DrawResult(
       id: current.id.isNotEmpty ? current.id : incoming.id,
       drawDate: DateTime(
@@ -3404,7 +3420,7 @@ class LottoAppState extends ChangeNotifier {
         incoming.drawDate.day,
       ),
       numbers: _sanitizeNumbers(incoming.numbers),
-      superNumber: incoming.superNumber ?? current.superNumber,
+      superNumber: incoming.superNumber,
       spiel77: incoming.spiel77 ?? current.spiel77,
       super6: incoming.super6 ?? current.super6,
     );
