@@ -2193,6 +2193,48 @@ class LottoAppState extends ChangeNotifier {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
+  bool _sameCalendarDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool _isCalendarDateAfter(DateTime a, DateTime b) {
+    final left = DateTime(a.year, a.month, a.day);
+    final right = DateTime(b.year, b.month, b.day);
+    return left.isAfter(right);
+  }
+
+  bool _tipMatchesDrawForEvaluation(LottoTip tip, DrawResult draw) {
+    final drawType = DrawTypeX.fromDate(draw.drawDate);
+
+    // Neue Regel: Offene/alte Tipps ohne Zielziehung werden nicht mehr blind
+    // gegen die aktuell ausgewählte Ziehung geprüft.
+    if (tip.targetDrawType == DrawType.unknown || drawType == DrawType.unknown) {
+      return false;
+    }
+
+    if (tip.targetDrawType != drawType) return false;
+
+    // Wenn ein Ziel-Datum vorhanden ist, muss genau diese Ziehung gewählt sein.
+    final targetDate = tip.targetDrawDate;
+    if (targetDate != null && !_sameCalendarDate(targetDate, draw.drawDate)) {
+      return false;
+    }
+
+    // Schutz vor rückwirkenden Treffern: Ein Tipp, der erst nach dem Ziehungstag
+    // gespeichert wurde, darf nicht als echter Treffer für diese Ziehung zählen.
+    if (_isCalendarDateAfter(tip.createdAt, draw.drawDate)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  List<LottoTip> _tipsMatchingSelectedDraw(DrawResult draw) {
+    return _savedTips
+        .where((tip) => _tipMatchesDrawForEvaluation(tip, draw))
+        .toList(growable: false);
+  }
+
   Future<bool> saveTipFromNumbers(
     List<int> numbers, {
     int? superNumber,
@@ -3493,11 +3535,19 @@ class LottoAppState extends ChangeNotifier {
       return <TipEvaluationResult>[];
     }
 
+    final matchingTips = _tipsMatchingSelectedDraw(draw);
+    if (matchingTips.isEmpty) {
+      _tipEvaluationResults = <TipEvaluationResult>[];
+      _rebuildCheckResults(notify: false);
+      notifyListeners();
+      return <TipEvaluationResult>[];
+    }
+
     final now = DateTime.now();
     final results = <TipEvaluationResult>[];
 
-    for (var i = 0; i < _savedTips.length; i++) {
-      final tip = _savedTips[i];
+    for (var i = 0; i < matchingTips.length; i++) {
+      final tip = matchingTips[i];
       final numbers = _normalizeLottoRow(tip.numbers);
       final row = _buildTipRowEvaluation(
         rowIndex: 1,

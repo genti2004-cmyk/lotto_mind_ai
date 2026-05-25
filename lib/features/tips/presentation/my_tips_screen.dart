@@ -266,13 +266,20 @@ class _MyTipsScreenState extends State<MyTipsScreen> {
 
   Future<void> _checkAllSavedTipsPro() async {
     final state = context.read<LottoAppState>();
+    final draw = state.selectedDrawForCheck;
     final results = await state.evaluateSavedTipsAgainstSelectedDraw();
     if (results.isEmpty) {
-      await _showMessage('Keine Prüfung möglich: Tipps oder Prüf-Ziehung fehlen.');
+      if (draw == null) {
+        await _showMessage('Keine Prüfung möglich: Bitte zuerst eine Prüf-Ziehung wählen.');
+      } else if (state.savedTips.isEmpty) {
+        await _showMessage('Keine Prüfung möglich: Es gibt noch keine gespeicherten Tipps.');
+      } else {
+        await _showMessage('Keine passende Prüfung: Nur Tipps mit passender Zielziehung werden ausgewertet.');
+      }
       return;
     }
     final wins = results.where((result) => result.hasAnyWin).length;
-    await _showMessage('Pro-Prüfung fertig: ${results.length} Tipp(s), $wins Gewinn-Treffer.');
+    await _showMessage('Prüfung fertig: ${results.length} passende Tipp(s), $wins Gewinn-Treffer.');
   }
 
   Future<void> _checkCurrentSystemPro() async {
