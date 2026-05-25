@@ -12,6 +12,7 @@ import 'westlotto_submission_screen.dart';
 
 import 'package:lotto_mind_ai/features/generator/domain/tip_tracking_entry.dart';
 import 'package:lotto_mind_ai/features/draws/domain/draw_result.dart';
+import 'package:lotto_mind_ai/features/draws/domain/draw_type.dart';
 import 'package:lotto_mind_ai/features/generator/domain/lotto_tip.dart';
 
 class MyTipsScreen extends StatefulWidget {
@@ -396,6 +397,7 @@ class _MyTipsScreenState extends State<MyTipsScreen> {
                           selectionMode: _selectionMode,
                           hitCount: state.hitCountForTip(tip.id),
                           matchedNumbers: state.matchedNumbersForTip(tip.id),
+                          evaluationResult: _latestResultForTip(tip, state.tipEvaluationResults),
                           canUseFavorites: state.gate.canUseFavorites,
                           onSelect: () => _toggleSelection(tip),
                           onCopy: () => _copyTip(tip),
@@ -475,14 +477,14 @@ class _PhaseCProEvaluationPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Gewinnprüfung Pro',
+                      'Tipps prüfen',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       draw == null
                           ? 'Bitte zuerst eine Prüf-Ziehung wählen.'
-                          : 'Normal, Vollsystem und VEW gegen ${_formatDate(draw!.drawDate)} prüfen.',
+                          : 'Gespeicherte Tipps gegen ${_formatDate(draw!.drawDate)} prüfen.',
                       style: const TextStyle(fontSize: 12, height: 1.3, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
                     ),
                   ],
@@ -502,7 +504,7 @@ class _PhaseCProEvaluationPanel extends StatelessWidget {
               ),
               _ProActionButton(
                 icon: Icons.account_tree_rounded,
-                label: 'Vollsystem / VEW prüfen',
+                label: 'Systemtipps prüfen',
                 onTap: onCheckSystem,
               ),
               _ProActionButton(
@@ -515,7 +517,7 @@ class _PhaseCProEvaluationPanel extends StatelessWidget {
           const SizedBox(height: 14),
           if (latest == null)
             const Text(
-              'Noch keine Pro-Auswertung vorhanden. Spiel 77 und Super 6 sind in der Engine vorbereitet.',
+              'Noch keine Prüfung vorhanden. Nach der Prüfung siehst du hier die letzten Ergebnisse.',
               style: TextStyle(fontSize: 12, height: 1.35, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
             )
           else ...[
@@ -735,7 +737,7 @@ class _HeroPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Lotto Mind AI Tickets',
+                      'Meine gespeicherten Tipps',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
@@ -747,7 +749,7 @@ class _HeroPanel extends StatelessWidget {
                     Text(
                       selectionMode
                           ? '$selectedTips Tipps markiert • bereit für Kopie, Abgabe oder Löschen'
-                          : 'Gespeicherte Reihen, Favoriten und Generator-Übergabe an einem Ort',
+                          : 'Hier siehst du Zielziehung, Status und Treffer deiner gespeicherten Tipps.',
                       style: TextStyle(
                         fontSize: 12,
                         height: 1.35,
@@ -1001,7 +1003,7 @@ class _BulkToolbar extends StatelessWidget {
                 child: Text(
                   selectionMode
                       ? '$selectedCount Tipps ausgewählt'
-                      : 'Mehrfachaktionen und Auswahl',
+                      : 'Mehrere Tipps auswählen',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
@@ -1125,6 +1127,162 @@ class _ActionPill extends StatelessWidget {
   }
 }
 
+
+TipEvaluationResult? _latestResultForTip(
+  LottoTip tip,
+  List<TipEvaluationResult> results,
+) {
+  for (final result in results) {
+    if (!_sameNumbers(tip.numbers, result.baseNumbers)) continue;
+    if (tip.superNumber != result.superNumber) continue;
+    return result;
+  }
+  return null;
+}
+
+bool _sameNumbers(List<int> a, List<int> b) {
+  if (a.length != b.length) return false;
+  final left = List<int>.from(a)..sort();
+  final right = List<int>.from(b)..sort();
+  for (var i = 0; i < left.length; i++) {
+    if (left[i] != right[i]) return false;
+  }
+  return true;
+}
+
+_TipStatus _buildTipStatus(LottoTip tip, TipEvaluationResult? result) {
+  if (result != null) {
+    final best = result.bestRow;
+    final label = best == null
+        ? 'Geprüft: keine Reihe gefunden'
+        : best.prizeClass.isWin
+            ? 'Geprüft: ${best.prizeClass.label}'
+            : 'Geprüft: ${best.hitLabel}';
+    return _TipStatus(
+      icon: result.hasAnyWin ? Icons.emoji_events_rounded : Icons.fact_check_rounded,
+      label: label,
+      detail: 'Prüf-Ziehung: ${_formatDate(result.draw.drawDate)}',
+      background: result.hasAnyWin ? AppColors.successSoft : AppColors.surfaceSoft,
+      border: result.hasAnyWin ? AppColors.success.withOpacity(0.22) : AppColors.border,
+      color: result.hasAnyWin ? AppColors.success : AppColors.textPrimary,
+    );
+  }
+
+  if (tip.targetDrawType == DrawType.unknown) {
+    return _TipStatus(
+      icon: Icons.help_outline_rounded,
+      label: 'Zielziehung offen',
+      detail: 'Dieser Tipp ist älter oder noch keinem Mittwoch/Samstag zugeordnet.',
+      background: AppColors.warningSoft,
+      border: AppColors.warning.withOpacity(0.22),
+      color: AppColors.warning,
+    );
+  }
+
+  final targetDate = tip.targetDrawDate;
+  if (targetDate == null) {
+    return _TipStatus(
+      icon: Icons.event_available_rounded,
+      label: 'Ziel: ${tip.targetDrawType.label}',
+      detail: 'Wähle eine passende ${tip.targetDrawType.label}-Ziehung für die Prüfung.',
+      background: AppColors.infoSoft,
+      border: AppColors.border,
+      color: AppColors.primary,
+    );
+  }
+
+  final today = DateUtils.dateOnly(DateTime.now());
+  final targetDay = DateUtils.dateOnly(targetDate);
+  if (targetDay.isAfter(today)) {
+    return _TipStatus(
+      icon: Icons.schedule_rounded,
+      label: 'Wartet auf ${tip.targetDrawType.label}',
+      detail: 'Gültig für ${_formatDate(targetDate)}. Prüfung erst nach der Ziehung.',
+      background: AppColors.infoSoft,
+      border: AppColors.border,
+      color: AppColors.primary,
+    );
+  }
+
+  return _TipStatus(
+    icon: Icons.playlist_add_check_circle_rounded,
+    label: 'Bereit zur Prüfung',
+    detail: 'Passende ${tip.targetDrawType.label}-Ziehung wählen und prüfen.',
+    background: AppColors.surfaceSoft,
+    border: AppColors.border,
+    color: AppColors.textPrimary,
+  );
+}
+
+class _TipStatus {
+  const _TipStatus({
+    required this.icon,
+    required this.label,
+    required this.detail,
+    required this.background,
+    required this.border,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String detail;
+  final Color background;
+  final Color border;
+  final Color color;
+}
+
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({required this.status});
+
+  final _TipStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: status.background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: status.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(status.icon, size: 18, color: status.color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  status.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: status.color,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  status.detail,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    height: 1.3,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TipTicketCard extends StatelessWidget {
   const _TipTicketCard({
     required this.tip,
@@ -1133,6 +1291,7 @@ class _TipTicketCard extends StatelessWidget {
     required this.selectionMode,
     required this.hitCount,
     required this.matchedNumbers,
+    required this.evaluationResult,
     required this.canUseFavorites,
     required this.onSelect,
     required this.onCopy,
@@ -1148,6 +1307,7 @@ class _TipTicketCard extends StatelessWidget {
   final bool selectionMode;
   final int hitCount;
   final List<int> matchedNumbers;
+  final TipEvaluationResult? evaluationResult;
   final bool canUseFavorites;
   final VoidCallback onSelect;
   final VoidCallback onCopy;
@@ -1158,6 +1318,8 @@ class _TipTicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final status = _buildTipStatus(tip, evaluationResult);
+
     return InkWell(
       borderRadius: BorderRadius.circular(28),
       onLongPress: onSelect,
@@ -1288,6 +1450,8 @@ class _TipTicketCard extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 10),
+            _StatusBanner(status: status),
             const SizedBox(height: 14),
             Wrap(
               spacing: 8,
@@ -1328,15 +1492,17 @@ class _TipTicketCard extends StatelessWidget {
                 Expanded(
                   child: _InfoBadge(
                     icon: Icons.analytics_rounded,
-                    label: '$hitCount Richtige',
-                    valueColor: hitCount >= 3 ? AppColors.success : AppColors.textPrimary,
+                    label: evaluationResult == null ? 'Noch nicht geprüft' : '$hitCount Richtige',
+                    valueColor: evaluationResult != null && hitCount >= 3 ? AppColors.success : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _InfoBadge(
                     icon: Icons.track_changes_rounded,
-                    label: matchedNumbers.isEmpty ? 'Keine Treffer' : matchedNumbers.join(', '),
+                    label: evaluationResult == null
+                        ? 'Treffer erscheinen nach Prüfung'
+                        : (matchedNumbers.isEmpty ? 'Keine Zahl getroffen' : 'Treffer: ${matchedNumbers.join(', ')}'),
                   ),
                 ),
               ],
@@ -1505,7 +1671,7 @@ String _sourceLabel(String raw) {
         return 'Vollsystem ${raw.replaceFirst('voll_', '')}';
       }
       if (raw.startsWith('vew_')) {
-        return 'VEW ${raw.replaceFirst('vew_', '')}';
+        return 'Intervall ${raw.replaceFirst('vew_', '')}';
       }
       return raw;
   }
