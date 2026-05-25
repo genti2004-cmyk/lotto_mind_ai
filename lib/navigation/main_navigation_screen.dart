@@ -80,24 +80,30 @@ class _MoreScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const _MoreSectionTitle('Expertenfunktionen'),
+          const _MoreHeader(),
+          const SizedBox(height: 18),
+          const _MoreSectionTitle('Analyse & Auswertung'),
           _MoreCard(
             title: 'Analyse',
-            subtitle: 'Intervall-, Häufigkeits- und Musteranalyse ansehen',
+            subtitle: 'Zahlenmuster, Häufigkeiten und Intervalle ansehen.',
+            badge: 'Pro',
             icon: Icons.analytics_rounded,
             onTap: () => _open(context, const AnalysisScreen()),
           ),
           const SizedBox(height: 12),
           _MoreCard(
             title: 'Tracking Pro',
-            subtitle: 'Tipp-Verlauf und Trefferhistorie für Pro-Nutzer',
+            subtitle: 'Gespeicherte Tipps langfristig beobachten und Treffer vergleichen.',
+            badge: 'Pro',
             icon: Icons.track_changes_rounded,
             onTap: () => _open(context, const TrackingScreen()),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 22),
+          const _MoreSectionTitle('Tipp-Erweiterungen'),
           _MoreCard(
             title: 'Systemschein',
-            subtitle: 'Systemgenerator, System AI und Abgabe vorbereiten',
+            subtitle: 'Mehrere Kombinationen strukturiert erzeugen und prüfen.',
+            badge: 'Pro',
             icon: Icons.grid_view_rounded,
             onTap: () => _open(context, const SystemGeneratorScreen()),
           ),
@@ -105,21 +111,24 @@ class _MoreScreen extends StatelessWidget {
           const _MoreSectionTitle('Verwaltung'),
           _MoreCard(
             title: 'Export Center',
-            subtitle: 'Backups, Datenexport und Wiederherstellung',
+            subtitle: 'Backups, Datenexport und Wiederherstellung verwalten.',
+            badge: 'Premium',
             icon: Icons.ios_share_rounded,
             onTap: () => _open(context, const ExportCenterScreen()),
           ),
           const SizedBox(height: 12),
           _MoreCard(
             title: 'Normal / Pro / Premium',
-            subtitle: 'Produktstufen und spätere Premium-Funktionen',
+            subtitle: 'Funktionsumfang und zukünftige App-Versionen ansehen.',
+            badge: 'Info',
             icon: Icons.workspace_premium_rounded,
             onTap: () => _open(context, const ProScreen()),
           ),
           const SizedBox(height: 12),
           _MoreCard(
             title: 'Einstellungen',
-            subtitle: 'App, Regeln und Optionen',
+            subtitle: 'App-Optionen, Regeln und lokale Einstellungen anpassen.',
+            badge: 'Normal',
             icon: Icons.settings_rounded,
             onTap: () => _open(context, const SettingsScreen()),
           ),
@@ -132,6 +141,48 @@ class _MoreScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+}
+
+class _MoreHeader extends StatelessWidget {
+  const _MoreHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.tune_rounded, color: theme.colorScheme.primary),
+              const SizedBox(width: 10),
+              Text(
+                'Weitere Funktionen',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Hier findest du Analyse, Systemtipps, Exporte und Einstellungen. Die wichtigsten Alltagsfunktionen bleiben unten in der Hauptnavigation.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.grey.shade800,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -159,18 +210,21 @@ class _MoreSectionTitle extends StatelessWidget {
 class _MoreCard extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String badge;
   final IconData icon;
   final VoidCallback onTap;
 
   const _MoreCard({
     required this.title,
     required this.subtitle,
+    required this.badge,
     required this.icon,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: onTap,
@@ -190,32 +244,78 @@ class _MoreCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 28),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, size: 25, color: theme.colorScheme.primary),
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      _PlanBadge(label: badge),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
                   Text(
                     subtitle,
                     style: const TextStyle(
                       fontSize: 12,
                       color: Colors.grey,
+                      height: 1.25,
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 10),
             const Icon(Icons.arrow_forward_ios, size: 16),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanBadge extends StatelessWidget {
+  final String label;
+
+  const _PlanBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bool isPremium = label == 'Premium';
+    final Color color = isPremium ? Colors.deepPurple : theme.colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          color: color,
         ),
       ),
     );
