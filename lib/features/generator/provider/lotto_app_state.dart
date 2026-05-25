@@ -10,6 +10,7 @@ import '../../draws/domain/draw_result.dart';
 import '../../draws/domain/draw_type.dart';
 import '../../draws/domain/tip_check_result.dart';
 import '../../draws/services/lotto_results_import_service.dart';
+import '../../draws/services/draw_history_service.dart';
 import '../../settings/domain/app_edition.dart';
 import '../../settings/domain/feature_gate.dart';
 import '../../settings/domain/rule_profile.dart';
@@ -1178,7 +1179,7 @@ class LottoAppState extends ChangeNotifier {
     await drawBox.clear();
 
     for (final draw in _drawResults) {
-      await drawBox.put(_drawDateKey(draw.drawDate), draw.toMap());
+      await drawBox.put(DrawHistoryService.drawDateKey(draw.drawDate), draw.toMap());
     }
   }
 
@@ -2323,7 +2324,7 @@ class LottoAppState extends ChangeNotifier {
       ..sort();
 
     final duplicateIndex = _drawResults.indexWhere(
-          (draw) => _sameDate(draw.drawDate, drawDate),
+          (draw) => DrawHistoryService.sameDate(draw.drawDate, drawDate),
     );
 
     final draw = DrawResult(
@@ -2340,7 +2341,7 @@ class LottoAppState extends ChangeNotifier {
 
     if (duplicateIndex != -1) {
       _drawResults[duplicateIndex] =
-          _replaceManualDraw(_drawResults[duplicateIndex], draw);
+          DrawHistoryService.replaceManualDraw(_drawResults[duplicateIndex], draw);
       _normalizeDrawHistory();
 
       if (_matchesCurrentDrawMode(_drawResults[duplicateIndex])) {
@@ -2522,22 +2523,11 @@ class LottoAppState extends ChangeNotifier {
   Future<int> _mergeImportedDraws(List<DrawResult> importedDraws, {
     bool saveAfterMerge = true,
   }) async {
-    int inserted = 0;
+    final inserted = DrawHistoryService.mergeImportedDraws(
+      _drawResults,
+      importedDraws,
+    );
 
-    for (final imported in importedDraws) {
-      final index = _drawResults.indexWhere(
-            (draw) => _sameDate(draw.drawDate, imported.drawDate),
-      );
-
-      if (index == -1) {
-        _drawResults.add(imported);
-        inserted++;
-      } else {
-        _drawResults[index] = _mergeDrawMetadata(_drawResults[index], imported);
-      }
-    }
-
-    _normalizeDrawHistory();
     _ensureSelectedDrawMatchesMode();
     _normalizeAnalysisWindow(notify: false);
     _rebuildCheckResults(notify: false);
@@ -3180,67 +3170,7 @@ class LottoAppState extends ChangeNotifier {
   }
 
   void _normalizeDrawHistory() {
-    final byDate = <String, DrawResult>{};
-
-    for (final draw in _drawResults) {
-      final normalized = _sanitizeDrawResult(draw);
-      if (normalized == null) continue;
-
-      final key = _drawDateKey(normalized.drawDate);
-      final current = byDate[key];
-      byDate[key] = current == null
-          ? normalized
-          : _mergeDrawMetadata(current, normalized);
-    }
-
-    _drawResults
-      ..clear()
-      ..addAll(byDate.values);
-
-    _drawResults.sort((a, b) => b.drawDate.compareTo(a.drawDate));
-  }
-
-  DrawResult? _sanitizeDrawResult(DrawResult draw) {
-    final numbers = _sanitizeNumbers(draw.numbers);
-    if (numbers.length != 6) return null;
-
-    final drawDate = DateTime(
-      draw.drawDate.year,
-      draw.drawDate.month,
-      draw.drawDate.day,
-    );
-
-    if (drawDate.weekday != DateTime.wednesday &&
-        drawDate.weekday != DateTime.saturday) {
-      return null;
-    }
-
-    final superNumber = draw.superNumber != null &&
-        draw.superNumber! >= 0 &&
-        draw.superNumber! <= 9
-        ? draw.superNumber
-        : null;
-
-    return DrawResult(
-      id: draw.id.isNotEmpty ? draw.id : '${drawDate.toIso8601String()}-${numbers.join('-')}',
-      drawDate: drawDate,
-      numbers: numbers,
-      superNumber: superNumber,
-      spiel77: _normalizeFixedDigitText(draw.spiel77, 7),
-      super6: _normalizeFixedDigitText(draw.super6, 6),
-    );
-  }
-
-  String _drawDateKey(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '${date.year}-$month-$day';
-  }
-
-  String? _normalizeFixedDigitText(String? value, int length) {
-    final digits = (value ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length != length) return null;
-    return digits;
+    DrawHistoryService.normalizeDrawHistory(_drawResults);
   }
 
   void rebuildFullAnalysis() {
@@ -3460,10 +3390,6 @@ class LottoAppState extends ChangeNotifier {
     return simulateTip(bestTip);
   }
 
-  bool _sameDate(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
   bool _listEquals(List<int> a, List<int> b) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
@@ -3486,39 +3412,6 @@ class LottoAppState extends ChangeNotifier {
 
     return digits;
   }
-
-  DrawResult _mergeDrawMetadata(DrawResult current, DrawResult incoming) {
-    // Frische Import-Daten sind fuer dieses Datum massgeblich.
-    // Wichtig: Wenn der Import KEINE Superzahl findet, darf eine frueher falsch
-    // gespeicherte "6" nicht weiterleben. Deshalb wird Superzahl bewusst auch
-    // auf null gesetzt. Spiel 77 / SUPER 6 bleiben dagegen erhalten, wenn die
-    // neue Quelle sie nicht liefert.
-    return current.copyWith(
-      superNumber: incoming.superNumber,
-      clearSuperNumber: incoming.superNumber == null,
-      spiel77: incoming.spiel77 ?? current.spiel77,
-      super6: incoming.super6 ?? current.super6,
-    );
-  }
-
-  DrawResult _replaceManualDraw(DrawResult current, DrawResult incoming) {
-    // Manuelle Eingabe ist eine bewusste Korrektur fuer dieses Datum.
-    // Wenn das Superzahl-Feld leer bleibt, wird eine alte/falsche Superzahl
-    // geloescht statt behalten. Spiel 77 / SUPER 6 bleiben erhalten, wenn leer.
-    return DrawResult(
-      id: current.id.isNotEmpty ? current.id : incoming.id,
-      drawDate: DateTime(
-        incoming.drawDate.year,
-        incoming.drawDate.month,
-        incoming.drawDate.day,
-      ),
-      numbers: _sanitizeNumbers(incoming.numbers),
-      superNumber: incoming.superNumber,
-      spiel77: incoming.spiel77 ?? current.spiel77,
-      super6: incoming.super6 ?? current.super6,
-    );
-  }
-
 
   // ================= PHASE C/D PRO: MEINE TIPPS GEWINNPRUEFUNG =================
   // Diese Methoden werden von lib/features/tips/presentation/my_tips_screen.dart genutzt.
