@@ -525,7 +525,7 @@ class LottoAppState extends ChangeNotifier {
   SystemPlayType get systemPlayType => _systemPlayType;
 
   String get systemPlayTypeLabel =>
-      _systemPlayType == SystemPlayType.full ? 'Voll' : 'VEW';
+      _systemPlayType == SystemPlayType.full ? 'Voll' : 'Intervall';
 
   List<int> get systemBaseNumbers => List.unmodifiable(_systemBaseNumbers);
 
@@ -1923,7 +1923,7 @@ class LottoAppState extends ChangeNotifier {
     }
 
     if (_systemPlayType == SystemPlayType.vew && _selectedSystemSize > 13) {
-      throw Exception('VEW max. 13 Zahlen erlaubt');
+      throw Exception('Intervall-System max. 13 Zahlen erlaubt');
     }
 
     final base = _generatorService.generateSystemBaseNumbers(

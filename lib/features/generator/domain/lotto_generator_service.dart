@@ -260,7 +260,7 @@ class LottoGeneratorService {
     final normalized = baseNumbers.toSet().toList()..sort();
 
     if (normalized.length < 7) {
-      throw Exception('VEW benötigt mindestens 7 Basiszahlen.');
+      throw Exception('Intervall-System benötigt mindestens 7 Basiszahlen.');
     }
 
     final rows = <List<int>>[];

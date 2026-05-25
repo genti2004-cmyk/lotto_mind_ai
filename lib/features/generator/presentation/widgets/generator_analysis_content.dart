@@ -70,7 +70,7 @@ class GeneratorAnalysisContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 GeneratorGlassPanel(
-                  title: 'AI-Auswertung',
+                  title: 'Modell-Auswertung',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -110,7 +110,7 @@ class GeneratorAnalysisContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 GeneratorGlassPanel(
-                  title: 'AI Pro++ Empfehlung',
+                  title: 'Premium-Empfehlung',
                   child: pro.bestTip.isEmpty
                       ? const Text(
                     'Noch zu wenige Ziehungen vorhanden.',
@@ -136,10 +136,10 @@ class GeneratorAnalysisContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 GeneratorGlassPanel(
-                  title: 'Multi AI',
+                  title: 'Strategie-Mix',
                   child: multiAi.isEmpty
                       ? const Text(
-                    'Noch nicht genug Daten für Multi AI.',
+                    'Noch nicht genug Daten für den Strategie-Mix.',
                     style: TextStyle(fontSize: 12),
                   )
                       : Column(

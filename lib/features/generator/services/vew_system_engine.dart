@@ -38,13 +38,13 @@ class VewSystemResult {
   String get smartVewLabel {
     if (vewRows.isEmpty) return 'Keine Reihen';
     if (tripleCoveragePercent >= 90 && pairCoveragePercent >= 95) {
-      return 'Smart VEW sehr stark';
+      return 'Intervall-System sehr stark';
     }
     if (tripleCoveragePercent >= 75 && pairCoveragePercent >= 90) {
-      return 'Smart VEW stark';
+      return 'Intervall-System stark';
     }
-    if (tripleCoveragePercent >= 55) return 'Smart VEW solide';
-    return 'Smart VEW Basis';
+    if (tripleCoveragePercent >= 55) return 'Intervall-System solide';
+    return 'Intervall-System Basis';
   }
 }
 

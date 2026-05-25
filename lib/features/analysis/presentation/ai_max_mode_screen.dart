@@ -17,13 +17,13 @@ class AiMaxModeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('AI Max Mode')),
+      appBar: AppBar(title: const Text('Expertenanalyse')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           const SectionTitle(
-            title: 'AI Max Mode',
-            subtitle: 'Beste Tipps basierend auf Analyse, Score und Mustergewichtung',
+            title: 'Expertenanalyse',
+            subtitle: 'Auffällige Zahlen nach Häufigkeit, Intervall, Rückstand und Mustergewichtung.',
           ),
           const SizedBox(height: 20),
           Container(
@@ -35,7 +35,7 @@ class AiMaxModeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('AI Final Empfehlung', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+                const Text('Modell-Empfehlung', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 8),
                 Wrap(spacing: 8, runSpacing: 8, children: result.primaryTip.map((n) => NumberBall(number: n)).toList()),
                 const SizedBox(height: 12),

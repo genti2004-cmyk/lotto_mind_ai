@@ -580,7 +580,7 @@ class _TrackingEntryCard extends StatelessWidget {
     if (s.contains('ai')) return 'AI';
     if (s.contains('jackpot')) return 'Jackpot';
     if (s.contains('voll')) return 'Vollsystem';
-    if (s.contains('vew')) return 'VEW-System';
+    if (s.contains('vew')) return 'Intervall-System';
     if (s.contains('analysis')) return 'Analyse';
     if (s.contains('manual')) return 'Manuell';
     return source.isEmpty ? 'Tipp' : source;

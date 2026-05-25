@@ -28,9 +28,9 @@ class AnalysisScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
           children: [
             SectionTitle(
-              title: 'Smart Analyse',
+              title: 'Analyse',
               subtitle:
-              'Historische Ziehungen, KI-Hinweise und Mustertrends sauber getrennt für Mittwoch und Samstag.',
+              'Häufigkeit, Intervalle, Rückstände und Muster getrennt für Mittwoch und Samstag.',
               trailing: _TopBadge(label: state.analysisStrengthLabel),
             ),
             const SizedBox(height: 18),
@@ -184,7 +184,7 @@ class _HeroCard extends StatelessWidget {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Lotto Mind AI Pro-Auswertung',
+                      'Muster-Auswertung',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 19,
@@ -312,7 +312,7 @@ class _QuickActionsCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Direkter Sprung in AI Max oder in den Rücktest für ROI und Gewinnfenster.',
+            'Öffne die Expertenanalyse oder prüfe im Rücktest, wie frühere Tipps abgeschnitten hätten.',
             style: TextStyle(
               fontSize: 13,
               height: 1.4,
@@ -325,7 +325,7 @@ class _QuickActionsCard extends StatelessWidget {
             children: [
               Expanded(
                 child: PrimaryButton(
-                  label: 'AI Max',
+                  label: 'Expertenanalyse',
                   icon: Icons.auto_awesome_rounded,
                   onPressed: onAiMax,
                 ),

@@ -76,7 +76,7 @@ class SavedSystemPlay {
       case 'full':
         return 'Vollsystem';
       case 'vew':
-        return 'VEW-System';
+        return 'Intervall-System';
       default:
         return type;
     }

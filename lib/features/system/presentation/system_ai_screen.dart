@@ -17,7 +17,7 @@ class SystemAiScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FB),
       appBar: AppBar(
-        title: const Text('VEW / Vollsystem AI'),
+        title: const Text('Intervall- / Vollsystem'),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
@@ -45,7 +45,7 @@ class SystemAiScreen extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _ActionCardButton(
-                  label: 'VEW System',
+                  label: 'Intervall-System',
                   icon: Icons.auto_awesome_mosaic_rounded,
                   onTap: () async {
                     await context.read<LottoAppState>().generateVewSystemTip();
@@ -752,7 +752,7 @@ class _EmptyStateCard extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Text(
-            'Erzeuge zuerst ein Vollsystem, VEW-System oder direkt ein AI optimiertes System.',
+            'Erzeuge zuerst ein Vollsystem, Intervall-System oder direkt ein optimiertes System.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12.5,

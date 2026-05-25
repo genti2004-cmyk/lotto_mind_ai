@@ -15,7 +15,7 @@ extension LottoPlayKindX on LottoPlayKind {
       case LottoPlayKind.fullSystem:
         return 'Vollsystem';
       case LottoPlayKind.vewSystem:
-        return 'VEW';
+        return 'Intervall';
     }
   }
 }

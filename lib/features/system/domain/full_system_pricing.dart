@@ -98,21 +98,21 @@ class LottoSystemPricing {
 const List<VewPreset> defaultVewPresets = [
   VewPreset(
     code: 'VEW-8/12',
-    name: 'VEW Kompakt',
+    name: 'Intervall Kompakt',
     stammzahlen: 8,
     reihen: 12,
     hinweis: 'Schnelles kompaktes Teilsystem für 8 Stammzahlen.',
   ),
   VewPreset(
     code: 'VEW-9/18',
-    name: 'VEW Balance',
+    name: 'Intervall Balance',
     stammzahlen: 9,
     reihen: 18,
     hinweis: 'Gute Balance aus Budget und Abdeckung.',
   ),
   VewPreset(
     code: 'VEW-10/24',
-    name: 'VEW Plus',
+    name: 'Intervall Plus',
     stammzahlen: 10,
     reihen: 24,
     hinweis: 'Mehr Abdeckung bei kontrolliertem Einsatz.',

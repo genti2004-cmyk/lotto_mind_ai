@@ -70,7 +70,7 @@ class _SystemGeneratorScreenState extends State<SystemGeneratorScreen>
       case 'full':
         return 'Vollsystem';
       case 'vew':
-        return 'VEW-System';
+        return 'Intervall-System';
       default:
         return 'Normalschein';
     }
@@ -321,7 +321,7 @@ class _SystemGeneratorScreenState extends State<SystemGeneratorScreen>
           tabs: const [
             Tab(text: 'Normal'),
             Tab(text: 'Voll'),
-            Tab(text: 'VEW'),
+            Tab(text: 'Intervall'),
           ],
         ),
       ),
@@ -505,7 +505,7 @@ class _SystemAiSizeBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$typeLabel: AI berechnet den Zahlenpool. Vollsystem erzeugt alle 6er-Reihen, VEW erzeugt reduzierte optimierte Reihen.',
+            '$typeLabel: AI berechnet den Zahlenpool. Vollsystem erzeugt alle 6er-Reihen, das Intervall-System erzeugt reduzierte optimierte Reihen.',
             style: const TextStyle(color: Color(0xFF667085), fontSize: 12, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 10),
@@ -539,12 +539,12 @@ class _VewProCoverageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Panel(
-      title: 'VEW Pro Abdeckung',
+      title: 'Intervall-Abdeckung',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _Line('Basiszahlen', '${report.selectedNumbers}'),
-          _Line('VEW-Reihen', '${report.rows}'),
+          _Line('Intervall-Reihen', '${report.rows}'),
           _Line('Vollsystem', '${report.fullRows} Reihen'),
           _Line('Ersparnis', pct(report.reduction)),
           const Divider(height: 18),
@@ -553,7 +553,7 @@ class _VewProCoverageCard extends StatelessWidget {
           _Line('4er-Abdeckung', pct(report.fourCoverage)),
           const SizedBox(height: 6),
           const Text(
-            'Pro-Hinweis: VEW reduziert den Einsatz und versucht trotzdem, wichtige 3er-/4er-Kombinationen breit abzudecken. Es ersetzt keine Vollsystem-Garantie.',
+            'Pro-Hinweis: Das Intervall-System reduziert den Einsatz und versucht trotzdem, wichtige 3er-/4er-Kombinationen breit abzudecken. Es ersetzt keine Vollsystem-Garantie.',
             style: TextStyle(color: Color(0xFF667085), fontSize: 12, fontWeight: FontWeight.w600),
           ),
         ],
@@ -834,7 +834,7 @@ class _EmptySavedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _Panel(
       title: 'Noch keine eigenen Systemscheine',
-      child: Text('Wähle Zahlen, speichere Normal/Voll/VEW und prüfe später gegen eine Ziehung inklusive Spiel 77 und Super 6.'),
+      child: Text('Wähle Zahlen, speichere Normal/Voll/Intervall und prüfe später gegen eine Ziehung inklusive Spiel 77 und Super 6.'),
     );
   }
 }

@@ -50,7 +50,7 @@ class WinSimulationScreen extends StatelessWidget {
               const SizedBox(height: 14),
             if (bestAiTip.length == 6)
               _TipSection(
-                title: 'AI Pro Tipp',
+                title: 'Pro-Tipp',
                 subtitle:
                 'Zeitraum-Bewertung für den aktuell besten AI-Tipp.',
                 numbers: bestAiTip,

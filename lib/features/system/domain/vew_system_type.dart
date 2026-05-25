@@ -60,23 +60,23 @@ extension VewSystemTypeX on VewSystemType {
   String get label {
     switch (this) {
       case VewSystemType.vew3:
-        return 'VEW 3';
+        return 'Intervall 3';
       case VewSystemType.vew4:
-        return 'VEW 4';
+        return 'Intervall 4';
       case VewSystemType.vew5:
-        return 'VEW 5';
+        return 'Intervall 5';
       case VewSystemType.vew6:
-        return 'VEW 6';
+        return 'Intervall 6';
       case VewSystemType.vew7_3:
-        return 'VEW 7-3';
+        return 'Intervall 7-3';
       case VewSystemType.vew8_4:
-        return 'VEW 8-4';
+        return 'Intervall 8-4';
       case VewSystemType.vew9_4:
-        return 'VEW 9-4';
+        return 'Intervall 9-4';
       case VewSystemType.vew9_5:
-        return 'VEW 9-5';
+        return 'Intervall 9-5';
       case VewSystemType.vew10_5:
-        return 'VEW 10-5';
+        return 'Intervall 10-5';
     }
   }
 }

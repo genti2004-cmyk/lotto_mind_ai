@@ -17,9 +17,9 @@ extension TrackedTipTypeLabel on TrackedTipType {
       case TrackedTipType.fullSystem:
         return 'Vollsystem';
       case TrackedTipType.vew:
-        return 'VEW';
+        return 'Intervall';
       case TrackedTipType.smartVew:
-        return 'Smart VEW';
+        return 'Smart Intervall';
       case TrackedTipType.custom:
         return 'Eigener Tipp';
     }

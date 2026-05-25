@@ -11,7 +11,7 @@
 class VewSystemService {
   const VewSystemService();
 
-  /// Baut reduzierte VEW-Reihen aus 7 bis 10 Basiszahlen.
+  /// Baut reduzierte Intervall-Reihen aus 7 bis 10 Basiszahlen.
   ///
   /// Zielreihen:
   /// 7 Zahlen  -> 3 Reihen
@@ -102,7 +102,7 @@ class VewSystemService {
     return _combinations(pool, 6);
   }
 
-  /// Anzahl reduzierter VEW-Reihen.
+  /// Anzahl reduzierter Intervall-Reihen.
   int targetRows(int selectedCount) {
     switch (selectedCount) {
       case 6:

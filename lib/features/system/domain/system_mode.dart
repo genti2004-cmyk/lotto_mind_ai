@@ -12,7 +12,7 @@ extension SystemModeX on SystemMode {
       case SystemMode.full:
         return 'Vollsystem';
       case SystemMode.vew:
-        return 'VEW';
+        return 'Intervall';
     }
   }
 }

@@ -78,7 +78,7 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
 
   Future<void> _applyBestTip() async {
     await context.read<LottoAppState>().applyBestAnalyzedTip();
-    await _showMessage('AI Pro Tipp wurde übernommen.');
+    await _showMessage('Pro-Tipp wurde übernommen.');
   }
 
   Future<void> _copyLastTip() async {
@@ -1463,7 +1463,7 @@ class _AiPanel extends StatelessWidget {
               SizedBox(
                 width: 180,
                 child: PrimaryButton(
-                  label: 'AI Max Mode',
+                  label: 'Expertenanalyse',
                   icon: Icons.psychology_alt_rounded,
                   onPressed: () {
                     Navigator.of(context).push(
@@ -1523,7 +1523,7 @@ class _AiPanel extends StatelessWidget {
             title: '3. Tipp übernehmen',
             child: bestTip.length != 6
                 ? const Text(
-              'Noch kein AI-Pro-Tipp verfügbar.',
+              'Noch kein Pro-Tipp verfügbar.',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
@@ -1536,7 +1536,7 @@ class _AiPanel extends StatelessWidget {
                 if (bestSimulation != null) ...[
                   const SizedBox(height: 12),
                   _SimulationSummaryCard(
-                    title: 'Rücktest AI Pro',
+                    title: 'Rücktest Pro',
                     simulation: bestSimulation,
                   ),
                 ],
@@ -1624,7 +1624,7 @@ class _JackpotPanel extends StatelessWidget {
               SizedBox(
                 width: 180,
                 child: PrimaryButton(
-                  label: 'AI Max Mode öffnen',
+                  label: 'Expertenanalyse öffnen',
                   icon: Icons.bolt_rounded,
                   onPressed: () {
                     Navigator.of(context).push(
@@ -1659,7 +1659,7 @@ class _JackpotPanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _BallRow(
-                    title: 'AI-Pro-Kandidat',
+                    title: 'Pro-Kandidat',
                     numbers: state.bestAnalyzedTip,
                   ),
                   const SizedBox(height: 12),
