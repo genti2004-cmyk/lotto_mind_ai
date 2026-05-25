@@ -77,10 +77,12 @@ class _MyTipsScreenState extends State<MyTipsScreen> {
       final superText = tip.superNumber?.toString() ?? '';
       final sourceText = _sourceLabel(tip.source).toLowerCase();
       final dateText = _formatDateTime(tip.createdAt).toLowerCase();
+      final targetText = tip.targetLabel.toLowerCase();
 
       return numbersText.contains(query) ||
           superText.contains(query) ||
           sourceText.contains(query) ||
+          targetText.contains(query) ||
           dateText.contains(query);
     }).toList();
   }
@@ -1253,6 +1255,30 @@ class _TipTicketCard extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.infoSoft,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.event_available_rounded, size: 15, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    tip.targetLabel,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 14),

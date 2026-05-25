@@ -7,6 +7,7 @@ import '../../system/services/system_ai_number_service.dart';
 
 import '../../draws/domain/draw_checker_service.dart';
 import '../../draws/domain/draw_result.dart';
+import '../../draws/domain/draw_type.dart';
 import '../../draws/domain/tip_check_result.dart';
 import '../../draws/services/lotto_results_import_service.dart';
 import '../../settings/domain/app_edition.dart';
@@ -2154,10 +2155,50 @@ class LottoAppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  DrawType _defaultTipTargetDrawType() {
+    switch (_drawMode) {
+      case DrawMode.wednesday:
+        return DrawType.wednesday;
+      case DrawMode.saturday:
+        return DrawType.saturday;
+      case DrawMode.combined:
+        return _nextScheduledDrawType(DateTime.now());
+    }
+  }
+
+  DrawType _nextScheduledDrawType(DateTime from) {
+    final today = DateTime(from.year, from.month, from.day);
+    final daysUntilWednesday = (DateTime.wednesday - today.weekday) % 7;
+    final daysUntilSaturday = (DateTime.saturday - today.weekday) % 7;
+
+    if (daysUntilWednesday == daysUntilSaturday) return DrawType.wednesday;
+    return daysUntilWednesday < daysUntilSaturday
+        ? DrawType.wednesday
+        : DrawType.saturday;
+  }
+
+  DateTime? _nextDateForDrawType(DrawType type) {
+    if (type == DrawType.unknown) return null;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final targetWeekday = type == DrawType.wednesday
+        ? DateTime.wednesday
+        : DateTime.saturday;
+    final daysUntilTarget = (targetWeekday - today.weekday) % 7;
+    return today.add(Duration(days: daysUntilTarget));
+  }
+
+  bool _sameNullableDate(DateTime? a, DateTime? b) {
+    if (a == null || b == null) return a == null && b == null;
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
   Future<bool> saveTipFromNumbers(
     List<int> numbers, {
     int? superNumber,
     String source = 'manual',
+    DrawType? targetDrawType,
+    DateTime? targetDrawDate,
   }) async {
     final normalizedNumbers = List<int>.from(numbers)
       ..removeWhere((number) => number < 1 || number > 49)
@@ -2170,10 +2211,15 @@ class LottoAppState extends ChangeNotifier {
             ? superNumber
             : null;
 
+    final resolvedTargetType = targetDrawType ?? _defaultTipTargetDrawType();
+    final resolvedTargetDate = targetDrawDate ?? _nextDateForDrawType(resolvedTargetType);
+
     final exists = _savedTips.any((tip) {
       final tipNumbers = List<int>.from(tip.numbers)..sort();
       return tipNumbers.join('-') == normalizedNumbers.join('-') &&
-          tip.superNumber == normalizedSuperNumber;
+          tip.superNumber == normalizedSuperNumber &&
+          tip.targetDrawType == resolvedTargetType &&
+          _sameNullableDate(tip.targetDrawDate, resolvedTargetDate);
     });
 
     if (exists) return false;
@@ -2186,6 +2232,8 @@ class LottoAppState extends ChangeNotifier {
         numbers: normalizedNumbers,
         superNumber: normalizedSuperNumber,
         source: source,
+        targetDrawType: resolvedTargetType,
+        targetDrawDate: resolvedTargetDate,
       ),
     );
 

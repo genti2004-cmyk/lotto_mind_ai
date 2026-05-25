@@ -1,9 +1,13 @@
+import '../../draws/domain/draw_type.dart';
+
 class LottoTip {
   final String id;
   final DateTime createdAt;
   final List<int> numbers;
   final int? superNumber;
   final String source;
+  final DrawType targetDrawType;
+  final DateTime? targetDrawDate;
   final bool isFavorite;
 
   const LottoTip({
@@ -12,6 +16,8 @@ class LottoTip {
     required this.numbers,
     required this.source,
     this.superNumber,
+    this.targetDrawType = DrawType.unknown,
+    this.targetDrawDate,
     this.isFavorite = false,
   });
 
@@ -22,6 +28,9 @@ class LottoTip {
     int? superNumber,
     bool clearSuperNumber = false,
     String? source,
+    DrawType? targetDrawType,
+    DateTime? targetDrawDate,
+    bool clearTargetDrawDate = false,
     bool? isFavorite,
   }) {
     return LottoTip(
@@ -30,7 +39,32 @@ class LottoTip {
       numbers: numbers ?? this.numbers,
       superNumber: clearSuperNumber ? null : (superNumber ?? this.superNumber),
       source: source ?? this.source,
+      targetDrawType: targetDrawType ?? this.targetDrawType,
+      targetDrawDate: clearTargetDrawDate ? null : (targetDrawDate ?? this.targetDrawDate),
       isFavorite: isFavorite ?? this.isFavorite,
+    );
+  }
+
+
+
+  String get targetLabel {
+    final typeLabel = targetDrawType.label;
+    final date = targetDrawDate;
+    if (targetDrawType == DrawType.unknown && date == null) {
+      return 'Zielziehung offen';
+    }
+    if (date == null) return 'Ziel: $typeLabel';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return 'Ziel: $typeLabel, $day.$month.$year';
+  }
+
+  static DrawType _drawTypeFromRaw(dynamic raw) {
+    final text = raw?.toString() ?? '';
+    return DrawType.values.firstWhere(
+      (value) => value.name == text,
+      orElse: () => DrawType.unknown,
     );
   }
 
@@ -41,6 +75,8 @@ class LottoTip {
       'numbers': numbers,
       'superNumber': superNumber,
       'source': source,
+      'targetDrawType': targetDrawType.name,
+      'targetDrawDate': targetDrawDate?.toIso8601String(),
       'isFavorite': isFavorite,
     };
   }
@@ -60,6 +96,8 @@ class LottoTip {
         return raw;
       }(),
       source: map['source']?.toString() ?? 'manual',
+      targetDrawType: _drawTypeFromRaw(map['targetDrawType']),
+      targetDrawDate: DateTime.tryParse(map['targetDrawDate']?.toString() ?? ''),
       isFavorite: map['isFavorite'] == true,
     );
   }
