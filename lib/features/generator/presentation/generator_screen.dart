@@ -76,6 +76,15 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
     }
   }
 
+  Future<void> _generateSignalTip() async {
+    try {
+      await context.read<LottoAppState>().generateSignalTip();
+      await _showMessage('Signal-Tipp wurde erstellt.');
+    } catch (e) {
+      await _showMessage(e.toString());
+    }
+  }
+
   Future<void> _applyBestTip() async {
     final state = context.read<LottoAppState>();
     await state.applyBestAnalyzedTip();
@@ -218,6 +227,7 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
                             child: _AiPanel(
                               state: state,
                               onGenerate: _generateAnalysis,
+                              onGenerateSignal: _generateSignalTip,
                               onApplyBest: state.bestAnalyzedTip.length == 6
                                   ? _applyBestTip
                                   : null,
@@ -1211,11 +1221,13 @@ class _MasterModeCard extends StatelessWidget {
 class _AiPanel extends StatelessWidget {
   final LottoAppState state;
   final Future<void> Function() onGenerate;
+  final Future<void> Function() onGenerateSignal;
   final Future<void> Function()? onApplyBest;
 
   const _AiPanel({
     required this.state,
     required this.onGenerate,
+    required this.onGenerateSignal,
     required this.onApplyBest,
   });
 
@@ -1223,6 +1235,7 @@ class _AiPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final ai = state.analysisAiSummary;
     final bestTip = state.bestAnalyzedTip;
+    final signalNumbers = state.signalTipNumbers;
     final lastSimulation = state.bestCurrentTipWindow?.summary;
     final bestSimulation = state.bestAiTipWindow?.summary;
 
@@ -1458,6 +1471,12 @@ class _AiPanel extends StatelessWidget {
             onPressed: onGenerate,
           ),
           const SizedBox(height: 10),
+          PrimaryButton(
+            label: 'Signal-Tipp berechnen',
+            icon: Icons.insights_rounded,
+            onPressed: onGenerateSignal,
+          ),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -1495,7 +1514,27 @@ class _AiPanel extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _SubCard(
-            title: '2. Modell-Hinweise',
+            title: '2. Signalmodell',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Der Signal-Tipp kombiniert Häufigkeit, Rückstand, Intervall und einfache Muster. Er zeigt auffällige Zahlen aus vergangenen Ziehungen und ist keine sichere Vorhersage.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.45,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _BallRow(title: 'Signal-Tipp', numbers: signalNumbers),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          _SubCard(
+            title: '3. Modell-Hinweise',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1523,7 +1562,7 @@ class _AiPanel extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _SubCard(
-            title: '3. Tipp übernehmen',
+            title: '4. Tipp übernehmen',
             child: bestTip.length != 6
                 ? const Text(
               'Noch kein Pro-Tipp verfügbar.',

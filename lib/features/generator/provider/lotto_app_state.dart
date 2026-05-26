@@ -25,6 +25,9 @@ import '../services/ai_master_mode_service.dart';
 import '../services/ai_learning_boost_service.dart' as ai_boost;
 import '../services/generated_tip_service.dart';
 import '../../tracking/services/tracking_service.dart';
+import '../../analysis/domain/analysis_signal.dart';
+import '../../analysis/domain/number_analysis_score.dart';
+import '../../analysis/services/number_analysis_service.dart';
 
 enum DrawMode {
   combined,
@@ -388,6 +391,7 @@ class LottoAppState extends ChangeNotifier {
 
   final LottoGeneratorService _generatorService = LottoGeneratorService();
   final GeneratedTipService _generatedTipService = GeneratedTipService();
+  final NumberAnalysisService _numberAnalysisService = const NumberAnalysisService();
   final DrawCheckerService _drawCheckerService = DrawCheckerService();
   final LottoResultsImportService _importService = LottoResultsImportService();
   final AiMasterModeService _aiMasterModeService = const AiMasterModeService();
@@ -484,6 +488,22 @@ class LottoAppState extends ChangeNotifier {
     return _advancedAnalysisService.generateSmartTipDetails(
       analysisDrawResults,
     );
+  }
+
+
+  List<NumberAnalysisScore> signalScores({
+    AnalysisSignal signal = AnalysisSignal.hybrid,
+    int limit = 6,
+  }) {
+    return _numberAnalysisService.topBySignal(
+      analysisDrawResults,
+      signal,
+      limit: limit,
+    );
+  }
+
+  List<int> get signalTipNumbers {
+    return signalScores(limit: 6).map((score) => score.number).toList()..sort();
   }
 
   AnalysisRuleSet _rules = AnalysisRuleSet.initial();
@@ -1865,6 +1885,22 @@ class LottoAppState extends ChangeNotifier {
       _lastGeneratedSuperNumber = generated.superNumber;
     }
 
+    await _saveToStorage();
+    notifyListeners();
+  }
+
+
+  Future<void> generateSignalTip() async {
+    final scores = signalScores(limit: 6);
+    final generated = _generatedTipService.generateSignalTip(
+      scores: scores,
+      recommendedSuperNumber: recommendedSuperNumber,
+    );
+
+    if (!generated.isValid) return;
+
+    _lastGeneratedTip = generated.numbers;
+    _lastGeneratedSuperNumber = generated.superNumber;
     await _saveToStorage();
     notifyListeners();
   }

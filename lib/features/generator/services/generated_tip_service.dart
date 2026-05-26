@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import '../../draws/domain/draw_result.dart';
+import '../../analysis/domain/number_analysis_score.dart';
 import '../domain/analysis_rule_set.dart';
 import '../domain/lotto_generator_service.dart';
 import 'pro_prediction_engine.dart';
@@ -52,6 +53,26 @@ class GeneratedTipService {
         historicalDraws: historicalDraws,
       ),
       superNumber: _normalizeSuperNumber(predictionResult.recommendedSuperNumber) ??
+          generateRandomSuperNumber(),
+    );
+  }
+
+
+  GeneratedTipPayload generateSignalTip({
+    required List<NumberAnalysisScore> scores,
+    int? recommendedSuperNumber,
+  }) {
+    final numbers = scores
+        .where((score) => score.number >= 1 && score.number <= 49)
+        .map((score) => score.number)
+        .toSet()
+        .take(6)
+        .toList()
+      ..sort();
+
+    return GeneratedTipPayload(
+      numbers: numbers,
+      superNumber: _normalizeSuperNumber(recommendedSuperNumber) ??
           generateRandomSuperNumber(),
     );
   }
