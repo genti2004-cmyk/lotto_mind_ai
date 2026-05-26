@@ -71,6 +71,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
     final draws = List<DrawResult>.from(state.drawResults)
       ..sort((a, b) => b.drawDate.compareTo(a.drawDate));
     final summaries = _service.buildStrategySummaries(_tips);
+    final savedTipCount = state.savedTips.length;
+    final checkCount = _tips.fold<int>(0, (sum, tip) => sum + tip.checks.length);
 
     return Scaffold(
       backgroundColor: const Color(0xFF081426),
@@ -95,6 +97,12 @@ class _TrackingScreenState extends State<TrackingScreen> {
           : ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _TrackingIntroCard(
+            savedTipCount: savedTipCount,
+            trackingTipCount: _tips.length,
+            checkCount: checkCount,
+          ),
+          const SizedBox(height: 14),
           _CreateFromCurrentTipCard(
             lastGeneratedTip: state.lastGeneratedTip,
             onSave: (numbers) => _runWork(() => _saveCurrentTip(numbers)),
@@ -169,7 +177,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tipp wurde in Meine Tipps und Tracking Pro gespeichert.')),
+      const SnackBar(content: Text('Tipp wurde in Meine Tipps gespeichert und zusätzlich ins Tracking übernommen.')),
     );
   }
 
@@ -212,6 +220,55 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 }
 
+
+class _TrackingIntroCard extends StatelessWidget {
+  final int savedTipCount;
+  final int trackingTipCount;
+  final int checkCount;
+
+  const _TrackingIntroCard({
+    required this.savedTipCount,
+    required this.trackingTipCount,
+    required this.checkCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.analytics_rounded, color: Colors.lightBlueAccent),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Statistik & Verlauf',
+                  style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Meine Tipps bleibt deine zentrale Ablage. Tracking Pro wertet gespeicherte Tipps langfristig aus und vergleicht Strategien.',
+            style: TextStyle(color: Colors.white.withOpacity(0.74), height: 1.35),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _Metric(label: 'Meine Tipps', value: '$savedTipCount')),
+              Expanded(child: _Metric(label: 'im Tracking', value: '$trackingTipCount')),
+              Expanded(child: _Metric(label: 'Prüfungen', value: '$checkCount')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CreateFromCurrentTipCard extends StatelessWidget {
   final List<int>? lastGeneratedTip;
   final ValueChanged<List<int>> onSave;
@@ -231,12 +288,12 @@ class _CreateFromCurrentTipCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Aktuellen Tipp speichern',
+            'Tipp ins Tracking übernehmen',
             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           Text(
-            canSave ? 'Speichert den zuletzt generierten 6er-Tipp in Meine Tipps und zusätzlich im Tracking.' : 'Noch kein 6er-Tipp im Generator vorhanden.',
+            canSave ? 'Der zuletzt generierte Tipp wird zuerst in Meine Tipps gespeichert und zusätzlich für Statistik in Tracking Pro übernommen.' : 'Noch kein 6er-Tipp im Generator vorhanden.',
             style: TextStyle(color: Colors.white.withOpacity(0.72)),
           ),
           const SizedBox(height: 12),
@@ -247,7 +304,7 @@ class _CreateFromCurrentTipCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: canSave ? () => onSave(tip) : null,
               icon: const Icon(Icons.save_rounded),
-              label: const Text('In Meine Tipps + Tracking speichern'),
+              label: const Text('In Meine Tipps + Tracking'),
             ),
           ),
         ],
@@ -283,7 +340,7 @@ class _BulkActionsCard extends StatelessWidget {
             children: [
               const Expanded(
                 child: Text(
-                  'Auswertung',
+                  'Statistik berechnen',
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
                 ),
               ),
@@ -304,17 +361,17 @@ class _BulkActionsCard extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: working ? null : onEvaluateLatest,
                 icon: const Icon(Icons.flash_on_rounded),
-                label: const Text('Alle letzte Ziehung'),
+                label: const Text('Letzte Ziehung'),
               ),
               OutlinedButton.icon(
                 onPressed: working ? null : onEvaluate52,
                 icon: const Icon(Icons.history_rounded),
-                label: const Text('Alle letzte 52'),
+                label: const Text('Letzte 52'),
               ),
               OutlinedButton.icon(
                 onPressed: working ? null : onEvaluateAll,
                 icon: const Icon(Icons.all_inclusive_rounded),
-                label: const Text('Alle Ziehungen'),
+                label: const Text('Alle'),
               ),
             ],
           ),
@@ -341,7 +398,7 @@ class _SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Tracking Bilanz',
+            'Tracking-Statistik',
             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
@@ -376,12 +433,12 @@ class _StrategySummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Strategie-Vergleich',
+            'Strategien vergleichen',
             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
           Text(
-            'Beste Strategie aktuell: ${best.type.label} • ${best.roiLabel}',
+            'Aktuell vorne: ${best.type.label} • ${best.roiLabel}',
             style: TextStyle(color: Colors.white.withOpacity(0.76)),
           ),
           const SizedBox(height: 12),
@@ -724,12 +781,12 @@ class _EmptyCard extends StatelessWidget {
           const Icon(Icons.inventory_2_outlined, color: Colors.white70, size: 42),
           const SizedBox(height: 10),
           const Text(
-            'Noch keine gespeicherten Tipps',
+            'Noch keine Tipps im Tracking',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
           Text(
-            'Generiere zuerst einen Tipp und speichere ihn hier zur späteren Prüfung.',
+            'Speichere Tipps zuerst in Meine Tipps. Für langfristige Statistik kannst du sie zusätzlich ins Tracking übernehmen.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white.withOpacity(0.68)),
           ),
