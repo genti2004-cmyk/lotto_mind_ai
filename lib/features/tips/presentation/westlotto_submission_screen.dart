@@ -19,7 +19,7 @@ class _WestlottoSubmissionScreenState extends State<WestlottoSubmissionScreen> {
   bool _opening = false;
 
   Future<void> _copyAll(String text) async {
-    final result = await Clipboard.setData(ClipboardData(text: text));
+    await Clipboard.setData(ClipboardData(text: text));
 
     if (!context.mounted) return;
 

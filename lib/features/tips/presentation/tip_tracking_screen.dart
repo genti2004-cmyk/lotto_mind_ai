@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../generator/domain/generator_strategy.dart';
 import '../../generator/domain/tip_tracking_entry.dart';
 import '../../generator/provider/lotto_app_state.dart';
 
@@ -575,16 +576,6 @@ class _TrackingEntryCard extends StatelessWidget {
     );
   }
 
-  String _sourceLabel(String source) {
-    final s = source.toLowerCase();
-    if (s.contains('ai')) return 'KI / Signal';
-    if (s.contains('jackpot')) return 'Jackpot';
-    if (s.contains('voll')) return 'Vollsystem';
-    if (s.contains('vew')) return 'Intervall-System';
-    if (s.contains('analysis')) return 'Analyse';
-    if (s.contains('manual')) return 'Manuell';
-    return source.isEmpty ? 'Tipp' : source;
-  }
 }
 
 class _NumberWrap extends StatelessWidget {
@@ -678,7 +669,7 @@ class _EmptyTrackingCard extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.10),
+              color: AppColors.primary.withValues(alpha: 0.10),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.search_off_rounded, color: AppColors.primary),

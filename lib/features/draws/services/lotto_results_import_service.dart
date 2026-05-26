@@ -106,25 +106,7 @@ class LottoResultsImportService {
     throw Exception('Import fehlgeschlagen: ${lastError ?? 'keine gueltigen Ziehungen gefunden'}');
   }
 
-  Future<List<DrawResult>> _downloadAndParseFirstWorking(List<String> urls) async {
-    Object? lastError;
-
-    for (final url in urls) {
-      try {
-        final body = await _download(url);
-        final parsed = _parseResultsFromHtml(body);
-        final valid = _normalizeResults(parsed);
-        if (valid.isNotEmpty) return valid;
-        lastError = Exception('Keine gueltigen Ziehungen in Quelle gefunden: $url');
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    throw Exception('Import fehlgeschlagen: $lastError');
-  }
-
-  Future<String> _download(String url) async {
+Future<String> _download(String url) async {
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 15)
       ..idleTimeout = const Duration(seconds: 15)

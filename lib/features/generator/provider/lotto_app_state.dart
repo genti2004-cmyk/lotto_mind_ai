@@ -1,9 +1,7 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hive_ce/hive.dart';
 import '../domain/advanced_number_analysis.dart';
 import '../domain/tip_tracking_entry.dart';
-import '../../system/services/system_ai_number_service.dart';
 
 import '../../draws/domain/draw_checker_service.dart';
 import '../../draws/domain/draw_result.dart';
@@ -2239,12 +2237,7 @@ class LottoAppState extends ChangeNotifier {
     return today.add(Duration(days: daysUntilTarget));
   }
 
-  bool _sameNullableDate(DateTime? a, DateTime? b) {
-    if (a == null || b == null) return a == null && b == null;
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
-  bool _sameCalendarDate(DateTime a, DateTime b) {
+bool _sameCalendarDate(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
@@ -3431,15 +3424,7 @@ class LottoAppState extends ChangeNotifier {
     return simulateTip(bestTip);
   }
 
-  bool _listEquals(List<int> a, List<int> b) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
-  String _formatDate(DateTime value) {
+String _formatDate(DateTime value) {
     final day = value.day.toString().padLeft(2, '0');
     final month = value.month.toString().padLeft(2, '0');
     return '$day.$month.${value.year}';

@@ -122,15 +122,7 @@ class SmartPredictionEngine {
 
     final selected = <int>{};
 
-    void addFrom(List<NumberScore> source, int amount) {
-      for (final item in source) {
-        if (selected.length >= count) break;
-        if (selected.length >= amount) break;
-        selected.add(item.number);
-      }
-    }
-
-    void addUntil(List<NumberScore> source, int targetSize) {
+void addUntil(List<NumberScore> source, int targetSize) {
       for (final item in source) {
         if (selected.length >= min(targetSize, count)) break;
         selected.add(item.number);

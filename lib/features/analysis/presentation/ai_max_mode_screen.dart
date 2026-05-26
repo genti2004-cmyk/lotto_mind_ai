@@ -51,7 +51,7 @@ class AiMaxModeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          PrimaryButton(label: 'Anzeige aktualisieren', icon: Icons.refresh_rounded, onPressed: () => context.read<LottoAppState>().notifyListeners()),
+          const PrimaryButton(label: 'Anzeige automatisch aktuell', icon: Icons.check_circle_rounded, onPressed: null),
           const SizedBox(height: 20),
           const Text('Top Kandidaten', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
           const SizedBox(height: 12),

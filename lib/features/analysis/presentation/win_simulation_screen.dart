@@ -81,17 +81,6 @@ class _IntroCard extends StatelessWidget {
     return '$fixed €';
   }
 
-  String _formatSignedEuro(double value) {
-    final prefix = value >= 0 ? '+' : '-';
-    final fixed = value.abs().toStringAsFixed(2).replaceAll('.', ',');
-    return '$prefix$fixed €';
-  }
-
-  String _formatPercent(double value) {
-    final prefix = value >= 0 ? '+' : '-';
-    final fixed = value.abs().toStringAsFixed(1).replaceAll('.', ',');
-    return '$prefix$fixed %';
-  }
 
   @override
   Widget build(BuildContext context) {

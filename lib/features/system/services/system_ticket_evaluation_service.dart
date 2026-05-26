@@ -161,73 +161,7 @@ class SystemTicketEvaluationService {
     return result;
   }
 
-  List<List<int>> _buildVewRows(List<int> numbers) {
-    final allRows = _combinations(numbers, 6);
-    final target = _vewTargetRows(numbers.length);
-    if (allRows.length <= target) return allRows;
-
-    final selected = <List<int>>[];
-    final coverage = <int, int>{for (final n in numbers) n: 0};
-
-    while (selected.length < target) {
-      _ScoredRow? best;
-      for (final row in allRows) {
-        if (selected.any((existing) => existing.join('-') == row.join('-'))) continue;
-        final score = _scoreVewCandidate(row, coverage, numbers);
-        if (best == null || score > best.score) {
-          best = _ScoredRow(row: row, score: score);
-        }
-      }
-      if (best == null) break;
-      selected.add(best.row);
-      for (final n in best.row) {
-        coverage[n] = (coverage[n] ?? 0) + 1;
-      }
-    }
-
-    return selected..sort((a, b) => a.join('-').compareTo(b.join('-')));
-  }
-
-  int _vewTargetRows(int selectedCount) {
-    switch (selectedCount) {
-      case 6:
-        return 1;
-      case 7:
-        return 3;
-      case 8:
-        return 4;
-      case 9:
-        return 5;
-      case 10:
-        return 6;
-      case 11:
-        return 8;
-      case 12:
-        return 10;
-      default:
-        return max(1, selectedCount - 4);
-    }
-  }
-
-  double _scoreVewCandidate(List<int> row, Map<int, int> coverage, List<int> pool) {
-    final newCoverage = row.where((n) => coverage[n] == 0).length;
-    final lowCoverageBonus = row.fold<double>(0, (sum, n) => sum + (6 - min(6, coverage[n] ?? 0)));
-    final sum = row.fold<int>(0, (a, b) => a + b);
-    final odd = row.where((n) => n.isOdd).length;
-    final low = row.where((n) => n <= 24).length;
-    final spread = row.last - row.first;
-
-    var score = newCoverage * 100.0 + lowCoverageBonus * 8.0;
-    if (odd >= 2 && odd <= 4) score += 5;
-    if (low >= 2 && low <= 4) score += 5;
-    if (spread >= 18) score += 3;
-    if (sum >= 90 && sum <= 180) score += 4;
-    score -= row.map((n) => (25 - n).abs()).fold<int>(0, (a, b) => a + b) * 0.03;
-    score += pool.length * 0.01;
-    return score;
-  }
-
-  String _digitsOnly(String value) => value.replaceAll(RegExp(r'[^0-9]'), '');
+String _digitsOnly(String value) => value.replaceAll(RegExp(r'[^0-9]'), '');
 }
 
 class SystemTicketEvaluation {
@@ -287,8 +221,3 @@ class SystemTicketEvaluation {
   bool get hasAnyWin => winningRows > 0 || totalEstimatedPrizeEuro > 0;
 }
 
-class _ScoredRow {
-  const _ScoredRow({required this.row, required this.score});
-  final List<int> row;
-  final double score;
-}

@@ -10,7 +10,6 @@ import '../../generator/provider/lotto_app_state.dart';
 import '../domain/tip_evaluation_result.dart';
 import 'westlotto_submission_screen.dart';
 
-import 'package:lotto_mind_ai/features/generator/domain/tip_tracking_entry.dart';
 import 'package:lotto_mind_ai/features/draws/domain/draw_result.dart';
 import 'package:lotto_mind_ai/features/draws/domain/draw_type.dart';
 import 'package:lotto_mind_ai/features/generator/domain/lotto_tip.dart';
