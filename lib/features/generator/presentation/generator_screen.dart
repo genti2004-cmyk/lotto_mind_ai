@@ -2169,7 +2169,7 @@ class _SignalReasonList extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${score.hitCount} Treffer im Fenster · ${score.lastSeenLabel}',
+                          '${score.hitCount} Treffer im Fenster · ${score.lastSeenLabel} · ${score.intervalLabel}',
                           style: const TextStyle(
                             fontSize: 11,
                             color: AppColors.textMuted,

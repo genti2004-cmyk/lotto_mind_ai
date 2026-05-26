@@ -10,6 +10,9 @@ class NumberAnalysisScore {
     required this.hybridScore,
     required this.lastSeenDrawsAgo,
     required this.hitCount,
+    required this.averageInterval,
+    required this.currentInterval,
+    required this.intervalRatio,
   });
 
   final int number;
@@ -20,6 +23,9 @@ class NumberAnalysisScore {
   final double hybridScore;
   final int? lastSeenDrawsAgo;
   final int hitCount;
+  final double? averageInterval;
+  final int? currentInterval;
+  final double? intervalRatio;
 
   double scoreFor(AnalysisSignal signal) {
     switch (signal) {
@@ -51,6 +57,15 @@ class NumberAnalysisScore {
 
   String get hybridPercentLabel => '${(hybridScore * 100).round()}%';
 
+  String get intervalLabel {
+    final average = averageInterval;
+    final current = currentInterval;
+    if (average == null || current == null || hitCount < 2) {
+      return 'Intervall noch nicht belastbar';
+    }
+    return 'Ø ${average.toStringAsFixed(1)} Ziehungen · aktuell $current';
+  }
+
   String get lastSeenLabel {
     if (lastSeenDrawsAgo == null) return 'im aktuellen Fenster nicht gesehen';
     if (lastSeenDrawsAgo == 0) return 'in der letzten Ziehung gesehen';
@@ -61,23 +76,23 @@ class NumberAnalysisScore {
   List<String> get reasonBullets {
     final reasons = <String>[];
 
-    if (frequencyScore >= 0.18) {
-      reasons.add('häufig im gewählten Analysefenster');
-    } else if (frequencyScore <= 0.06 && hitCount > 0) {
-      reasons.add('selten im gewählten Analysefenster');
+    if (frequencyScore >= 0.70) {
+      reasons.add('überdurchschnittlich häufig im Analysefenster');
+    } else if (frequencyScore <= 0.22 && hitCount > 0) {
+      reasons.add('unterdurchschnittlich häufig im Analysefenster');
     }
 
-    if (overdueScore >= 0.65) {
-      reasons.add('hoher Rückstand');
+    if (overdueScore >= 0.70) {
+      reasons.add('erhöhter Rückstand');
     } else if (lastSeenDrawsAgo == 0) {
       reasons.add('sehr frisch gezogen');
     }
 
-    if (intervalScore >= 0.65) {
-      reasons.add('auffälliges Intervall-Signal');
+    if (intervalScore >= 0.72) {
+      reasons.add('aktueller Abstand passt gut zum typischen Intervall');
     }
 
-    if (patternScore >= 0.35) {
+    if (patternScore >= 0.45) {
       reasons.add('Muster-/Nachbarschaftssignal');
     }
 
@@ -92,5 +107,4 @@ class NumberAnalysisScore {
     final parts = reasonBullets.take(2).join(' · ');
     return '$parts · Hybrid $hybridPercentLabel · $lastSeenLabel';
   }
-
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../draws/domain/draw_result.dart';
 import '../domain/analysis_signal.dart';
 import '../domain/number_analysis_score.dart';
@@ -5,13 +7,17 @@ import '../domain/number_analysis_score.dart';
 class NumberAnalysisService {
   const NumberAnalysisService();
 
+  static const int _minNumber = 1;
+  static const int _maxNumber = 49;
+  static const int _numbersPerDraw = 6;
+
   List<NumberAnalysisScore> analyzeNumbers(List<DrawResult> draws) {
     final orderedDraws = List<DrawResult>.from(draws)
       ..sort((a, b) => b.drawDate.compareTo(a.drawDate));
 
     if (orderedDraws.isEmpty) {
       return List.generate(
-        49,
+        _maxNumber,
         (index) => NumberAnalysisScore(
           number: index + 1,
           frequencyScore: 0,
@@ -21,19 +27,24 @@ class NumberAnalysisService {
           hybridScore: 0,
           lastSeenDrawsAgo: null,
           hitCount: 0,
+          averageInterval: null,
+          currentInterval: null,
+          intervalRatio: null,
         ),
       );
     }
 
     final totalDraws = orderedDraws.length;
+    final expectedHits = math.max(1.0, totalDraws * (_numbersPerDraw / _maxNumber));
+    final baselineInterval = _maxNumber / _numbersPerDraw;
     final hitsByNumber = <int, List<int>>{
-      for (int number = 1; number <= 49; number++) number: <int>[],
+      for (int number = _minNumber; number <= _maxNumber; number++) number: <int>[],
     };
 
     for (var drawIndex = 0; drawIndex < orderedDraws.length; drawIndex++) {
       final uniqueNumbers = orderedDraws[drawIndex]
           .numbers
-          .where((number) => number >= 1 && number <= 49)
+          .where((number) => number >= _minNumber && number <= _maxNumber)
           .toSet();
       for (final number in uniqueNumbers) {
         hitsByNumber[number]!.add(drawIndex);
@@ -41,23 +52,38 @@ class NumberAnalysisService {
     }
 
     final scores = <NumberAnalysisScore>[];
-    for (var number = 1; number <= 49; number++) {
+    for (var number = _minNumber; number <= _maxNumber; number++) {
       final hitIndexes = hitsByNumber[number] ?? const <int>[];
       final hitCount = hitIndexes.length;
       final lastSeen = hitIndexes.isEmpty ? null : hitIndexes.first;
+      final averageInterval = _averageInterval(hitIndexes);
+      final currentInterval = lastSeen == null ? null : lastSeen + 1;
+      final expectedInterval = averageInterval ?? baselineInterval;
+      final intervalRatio = currentInterval == null || expectedInterval <= 0
+          ? null
+          : currentInterval / expectedInterval;
 
-      final frequencyScore = hitCount / totalDraws;
-      final overdueScore = lastSeen == null
-          ? 1.0
-          : (lastSeen / totalDraws).clamp(0.0, 1.0).toDouble();
-      final intervalScore = _intervalScore(hitIndexes, totalDraws);
+      final frequencyScore = _frequencyScore(hitCount, expectedHits);
+      final overdueScore = _overdueScore(
+        currentInterval: currentInterval,
+        averageInterval: averageInterval,
+        baselineInterval: baselineInterval,
+        totalDraws: totalDraws,
+        hitCount: hitCount,
+      );
+      final intervalScore = _intervalScore(
+        hitIndexes: hitIndexes,
+        averageInterval: averageInterval,
+        currentInterval: currentInterval,
+        baselineInterval: baselineInterval,
+      );
       final patternScore = _patternScore(number, orderedDraws);
-      final hybridScore = (
-        frequencyScore * 0.30 +
-        overdueScore * 0.25 +
-        intervalScore * 0.30 +
-        patternScore * 0.15
-      ).clamp(0.0, 1.0).toDouble();
+      final hybridScore = _hybridScore(
+        frequencyScore: frequencyScore,
+        overdueScore: overdueScore,
+        intervalScore: intervalScore,
+        patternScore: patternScore,
+      );
 
       scores.add(
         NumberAnalysisScore(
@@ -69,6 +95,9 @@ class NumberAnalysisService {
           hybridScore: hybridScore,
           lastSeenDrawsAgo: lastSeen,
           hitCount: hitCount,
+          averageInterval: averageInterval,
+          currentInterval: currentInterval,
+          intervalRatio: intervalRatio,
         ),
       );
     }
@@ -90,47 +119,163 @@ class NumberAnalysisService {
       final byScore = b.scoreFor(signal).compareTo(a.scoreFor(signal));
       return byScore != 0 ? byScore : a.number.compareTo(b.number);
     });
+    if (signal == AnalysisSignal.hybrid && limit >= 6) {
+      return _diversified(scores, limit: limit);
+    }
     return scores.take(limit).toList();
   }
 
-  double _intervalScore(List<int> hitIndexes, int totalDraws) {
-    if (hitIndexes.isEmpty) return 0.85;
-    if (hitIndexes.length == 1) {
-      return ((hitIndexes.first + 1) / totalDraws).clamp(0.0, 1.0).toDouble();
+  double _frequencyScore(int hitCount, double expectedHits) {
+    if (hitCount <= 0) return 0.0;
+    final ratio = hitCount / expectedHits;
+    return (ratio / 1.8).clamp(0.0, 1.0).toDouble();
+  }
+
+  double _overdueScore({
+    required int? currentInterval,
+    required double? averageInterval,
+    required double baselineInterval,
+    required int totalDraws,
+    required int hitCount,
+  }) {
+    if (currentInterval == null) {
+      // Zahlen ohne Treffer im Fenster sind auffällig, aber nicht automatisch Top-Kandidaten.
+      return totalDraws >= baselineInterval ? 0.62 : 0.35;
+    }
+    final expectedInterval = averageInterval ?? baselineInterval;
+    final ratio = currentInterval / expectedInterval;
+    if (ratio <= 0.35) return 0.05;
+    if (ratio <= 1.0) return (ratio * 0.55).clamp(0.0, 0.55).toDouble();
+    return (0.55 + ((ratio - 1) / 1.8) * 0.45).clamp(0.0, 1.0).toDouble();
+  }
+
+  double _intervalScore({
+    required List<int> hitIndexes,
+    required double? averageInterval,
+    required int? currentInterval,
+    required double baselineInterval,
+  }) {
+    if (currentInterval == null) return 0.35;
+    final expectedInterval = averageInterval ?? baselineInterval;
+    if (expectedInterval <= 0) return 0.0;
+
+    final ratio = currentInterval / expectedInterval;
+    // Intervall-Signal ist am stärksten, wenn der aktuelle Abstand ungefähr
+    // dem typischen Abstand entspricht. Stark überzogene Rückstände werden
+    // separat über overdueScore bewertet und hier bewusst nicht doppelt belohnt.
+    final distanceFromCycle = (ratio - 1.0).abs();
+    final cycleFit = (1.0 - (distanceFromCycle / 1.35)).clamp(0.0, 1.0).toDouble();
+
+    if (hitIndexes.length <= 1) {
+      return (cycleFit * 0.65).clamp(0.0, 0.65).toDouble();
     }
 
-    final gaps = <int>[];
-    for (var i = 0; i < hitIndexes.length - 1; i++) {
-      gaps.add((hitIndexes[i + 1] - hitIndexes[i]).abs());
-    }
-    if (gaps.isEmpty) return 0.0;
-
-    final averageGap = gaps.reduce((a, b) => a + b) / gaps.length;
-    final currentGap = hitIndexes.first + 1;
-    if (averageGap <= 0) return 0.0;
-
-    final ratio = currentGap / averageGap;
-    if (ratio <= 1) return (ratio * 0.55).clamp(0.0, 0.55).toDouble();
-    return (0.55 + ((ratio - 1) / 3) * 0.45).clamp(0.0, 1.0).toDouble();
+    final consistency = _intervalConsistency(hitIndexes);
+    return (cycleFit * 0.72 + consistency * 0.28).clamp(0.0, 1.0).toDouble();
   }
 
   double _patternScore(int number, List<DrawResult> draws) {
     if (draws.length < 3) return 0.0;
 
     var recentHits = 0;
-    for (final draw in draws.take(5)) {
+    for (final draw in draws.take(math.min(6, draws.length))) {
       if (draw.numbers.contains(number)) recentHits++;
     }
 
     var neighborHits = 0;
-    for (final draw in draws.take(10)) {
+    for (final draw in draws.take(math.min(12, draws.length))) {
       if (draw.numbers.contains(number - 1) || draw.numbers.contains(number + 1)) {
         neighborHits++;
       }
     }
 
-    final recentScore = (recentHits / 5).clamp(0.0, 1.0).toDouble();
-    final neighborScore = (neighborHits / 10).clamp(0.0, 1.0).toDouble();
-    return (recentScore * 0.55 + neighborScore * 0.45).clamp(0.0, 1.0).toDouble();
+    var sameDecadeHits = 0;
+    final decadeStart = ((number - 1) ~/ 10) * 10 + 1;
+    final decadeEnd = math.min(decadeStart + 9, _maxNumber);
+    for (final draw in draws.take(math.min(12, draws.length))) {
+      final countInDecade = draw.numbers
+          .where((value) => value >= decadeStart && value <= decadeEnd)
+          .length;
+      if (countInDecade >= 2) sameDecadeHits++;
+    }
+
+    final recentScore = (recentHits / math.min(6, draws.length)).clamp(0.0, 1.0).toDouble();
+    final neighborScore = (neighborHits / math.min(12, draws.length)).clamp(0.0, 1.0).toDouble();
+    final decadeScore = (sameDecadeHits / math.min(12, draws.length)).clamp(0.0, 1.0).toDouble();
+    return (recentScore * 0.40 + neighborScore * 0.35 + decadeScore * 0.25)
+        .clamp(0.0, 1.0)
+        .toDouble();
+  }
+
+  double _hybridScore({
+    required double frequencyScore,
+    required double overdueScore,
+    required double intervalScore,
+    required double patternScore,
+  }) {
+    return (
+      frequencyScore * 0.27 +
+      overdueScore * 0.23 +
+      intervalScore * 0.34 +
+      patternScore * 0.16
+    ).clamp(0.0, 1.0).toDouble();
+  }
+
+  double? _averageInterval(List<int> hitIndexes) {
+    if (hitIndexes.length < 2) return null;
+    final gaps = <int>[];
+    for (var i = 0; i < hitIndexes.length - 1; i++) {
+      gaps.add((hitIndexes[i + 1] - hitIndexes[i]).abs());
+    }
+    if (gaps.isEmpty) return null;
+    return gaps.reduce((a, b) => a + b) / gaps.length;
+  }
+
+  double _intervalConsistency(List<int> hitIndexes) {
+    if (hitIndexes.length < 3) return 0.45;
+    final gaps = <int>[];
+    for (var i = 0; i < hitIndexes.length - 1; i++) {
+      gaps.add((hitIndexes[i + 1] - hitIndexes[i]).abs());
+    }
+    if (gaps.length < 2) return 0.45;
+    final average = gaps.reduce((a, b) => a + b) / gaps.length;
+    if (average <= 0) return 0.0;
+    final variance = gaps
+        .map((gap) => math.pow(gap - average, 2).toDouble())
+        .reduce((a, b) => a + b) / gaps.length;
+    final deviationRatio = math.sqrt(variance) / average;
+    return (1.0 - deviationRatio).clamp(0.0, 1.0).toDouble();
+  }
+
+  List<NumberAnalysisScore> _diversified(
+    List<NumberAnalysisScore> sortedScores, {
+    required int limit,
+  }) {
+    final selected = <NumberAnalysisScore>[];
+    final decadeCounts = <int, int>{};
+
+    for (final score in sortedScores) {
+      if (selected.length >= limit) break;
+      final decade = (score.number - 1) ~/ 10;
+      final currentDecadeCount = decadeCounts[decade] ?? 0;
+      final hasTooManyNeighbors = selected.where(
+        (item) => (item.number - score.number).abs() <= 1,
+      ).length >= 2;
+
+      if (currentDecadeCount >= 2 || hasTooManyNeighbors) continue;
+      selected.add(score);
+      decadeCounts[decade] = currentDecadeCount + 1;
+    }
+
+    if (selected.length < limit) {
+      for (final score in sortedScores) {
+        if (selected.length >= limit) break;
+        if (selected.any((item) => item.number == score.number)) continue;
+        selected.add(score);
+      }
+    }
+
+    selected.sort((a, b) => a.number.compareTo(b.number));
+    return selected.take(limit).toList();
   }
 }
