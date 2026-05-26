@@ -7,6 +7,8 @@ import '../../../core/widgets/number_ball.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_title.dart';
 import '../../draws/domain/draw_result.dart';
+import '../domain/analysis_signal.dart';
+import '../services/number_analysis_service.dart';
 import '../../generator/provider/lotto_app_state.dart';
 import 'ai_max_mode_screen.dart';
 import 'win_simulation_screen.dart';
@@ -20,6 +22,8 @@ class AnalysisScreen extends StatelessWidget {
     final summary = state.analysisSummary;
     final aiSummary = state.analysisAiSummary;
     final proSummary = state.analysisProSummary;
+    final signalScores = const NumberAnalysisService()
+        .topBySignal(state.analysisDrawResults, AnalysisSignal.hybrid, limit: 6);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -59,6 +63,8 @@ class AnalysisScreen extends StatelessWidget {
               averageSpread: summary.averageSpread,
             ),
             const SizedBox(height: 14),
+            _SignalModelCard(scores: signalScores),
+            const SizedBox(height: 14),
             _AiInsightCard(
               aiSummary: aiSummary,
               proSummary: proSummary,
@@ -91,6 +97,108 @@ class AnalysisScreen extends StatelessWidget {
               draws: state.saturdayDrawResults,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class _SignalModelCard extends StatelessWidget {
+  const _SignalModelCard({required this.scores});
+
+  final List<dynamic> scores;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasScores = scores.isNotEmpty && scores.any((score) => score.hybridScore > 0);
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Signalmodell',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Diese Übersicht trennt Häufigkeit, Rückstand, Intervall und Muster. Sie bewertet Auffälligkeiten aus vergangenen Ziehungen, ohne eine sichere Vorhersage zu behaupten.',
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (!hasScores)
+            const Text(
+              'Noch nicht genug Ziehungen für eine belastbare Signalübersicht.',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            )
+          else ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: scores
+                  .take(6)
+                  .map<Widget>(
+                    (score) => NumberBall(
+                      number: score.number as int,
+                      size: 38,
+                      highlighted: true,
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: const [
+                _SignalChip(label: 'Häufigkeit'),
+                _SignalChip(label: 'Rückstand'),
+                _SignalChip(label: 'Intervall'),
+                _SignalChip(label: 'Muster'),
+                _SignalChip(label: 'Hybrid'),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SignalChip extends StatelessWidget {
+  const _SignalChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.infoSoft,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          color: AppColors.primaryDark,
         ),
       ),
     );
