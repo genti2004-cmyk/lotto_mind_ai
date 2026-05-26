@@ -264,7 +264,7 @@ class _TrackingIntroCard extends StatelessWidget {
             children: [
               Expanded(child: _Metric(label: 'Meine Tipps', value: '$savedTipCount')),
               Expanded(child: _Metric(label: 'im Tracking', value: '$trackingTipCount')),
-              Expanded(child: _Metric(label: 'Prüfungen', value: '$checkCount')),
+              Expanded(child: _Metric(label: 'Rücktests', value: '$checkCount')),
             ],
           ),
         ],
@@ -344,7 +344,7 @@ class _BulkActionsCard extends StatelessWidget {
             children: [
               const Expanded(
                 child: Text(
-                  'Statistik berechnen',
+                  'Rücktest berechnen',
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
                 ),
               ),
@@ -365,12 +365,12 @@ class _BulkActionsCard extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: working ? null : onEvaluateLatest,
                 icon: const Icon(Icons.flash_on_rounded),
-                label: const Text('Letzte Ziehung'),
+                label: const Text('1 Ziehung'),
               ),
               OutlinedButton.icon(
                 onPressed: working ? null : onEvaluate52,
                 icon: const Icon(Icons.history_rounded),
-                label: const Text('Letzte 52'),
+                label: const Text('52 Ziehungen'),
               ),
               OutlinedButton.icon(
                 onPressed: working ? null : onEvaluateAll,
@@ -402,20 +402,20 @@ class _SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Tracking-Statistik',
+            'Rücktest-Statistik',
             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(child: _Metric(label: 'Tipps', value: '${tips.length}')),
-              Expanded(child: _Metric(label: 'Prüfungen', value: '$checks')),
-              Expanded(child: _Metric(label: 'ROI', value: '${roi.toStringAsFixed(1).replaceAll('.', ',')} %')),
+              Expanded(child: _Metric(label: 'Historische Prüfungen', value: '$checks')),
+              Expanded(child: _Metric(label: 'Rücktest-ROI', value: '${roi.toStringAsFixed(1).replaceAll('.', ',')} %')),
             ],
           ),
           const SizedBox(height: 10),
           Text(
-            'Einsatz ${LottoWinValueModel.formatEuro(stake)} • Gewinn ${LottoWinValueModel.formatEuro(prize)} • Netto ${LottoWinValueModel.formatSignedEuro(prize - stake)}',
+            'Historischer Rücktest: Einsatz ${LottoWinValueModel.formatEuro(stake)} • Gewinn ${LottoWinValueModel.formatEuro(prize)} • Netto ${LottoWinValueModel.formatSignedEuro(prize - stake)}',
             style: TextStyle(color: Colors.white.withOpacity(0.72)),
           ),
         ],
@@ -432,22 +432,38 @@ class _StrategySummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final best = summaries.first;
+    final dateFormat = DateFormat('dd.MM.yyyy', 'de_DE');
+
     return _Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Strategien vergleichen',
+            'Strategie-Vergleich (Rücktest)',
             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
           Text(
-            'Aktuell vorne: ${best.type.label} • ${best.roiLabel}',
-            style: TextStyle(color: Colors.white.withOpacity(0.76)),
+            'Vergleicht historische Prüfungen. Das ist ein Rücktest und keine echte Gewinnzusage. Echte Tipp-Auswertungen bleiben in „Meine Tipps“ der führende Bereich.',
+            style: TextStyle(color: Colors.white.withOpacity(0.72), height: 1.35),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.lightBlueAccent.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.lightBlueAccent.withOpacity(0.20)),
+            ),
+            child: Text(
+              'Aktuell stärkstes Rücktest-Signal: ${best.type.label} • Best ${best.bestHits} Treffer • ${best.usefulChecks} relevante historische Prüfung(en)',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+            ),
           ),
           const SizedBox(height: 12),
           ...summaries.map(
-                (summary) => Padding(
+            (summary) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Container(
                 width: double.infinity,
@@ -456,34 +472,78 @@ class _StrategySummaryCard extends StatelessWidget {
                   color: Colors.white.withOpacity(0.055),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(summary.type.label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-                          const SizedBox(height: 3),
-                          Text(
-                            '${summary.tipCount} Tipp(s) • ${summary.checkCount} Prüfung(en) • Best ${summary.bestHits} Treffer',
-                            style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    Row(
                       children: [
-                        Text(summary.roiLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-                        Text(summary.performanceLabel, style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 12)),
+                        Expanded(
+                          child: Text(
+                            summary.type.label,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
+                          ),
+                        ),
+                        Text(
+                          summary.roiLabel,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+                        ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _StrategyChip(label: 'Tipps', value: '${summary.tipCount}'),
+                        _StrategyChip(label: 'Hist. Prüfungen', value: '${summary.checkCount}'),
+                        _StrategyChip(label: 'Best', value: '${summary.bestHits} Treffer'),
+                        _StrategyChip(label: 'Ø Best', value: summary.averageBestHits.toStringAsFixed(1).replaceAll('.', ',')),
+                        _StrategyChip(label: '≥ 3 Treffer', value: '${summary.usefulChecks}'),
+                        _StrategyChip(label: 'SZ Treffer', value: '${summary.superNumberHits}'),
+                        _StrategyChip(label: 'Beste GK', value: summary.bestWinClassLabel),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Rücktest: Einsatz ${LottoWinValueModel.formatEuro(summary.stake)} • Gewinn ${LottoWinValueModel.formatEuro(summary.prize)} • ${summary.performanceLabel}',
+                      style: TextStyle(color: Colors.white.withOpacity(0.68), fontSize: 12),
+                    ),
+                    if (summary.latestCheckDate != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Zuletzt historisch geprüft: ${dateFormat.format(summary.latestCheckDate!)}',
+                        style: TextStyle(color: Colors.white.withOpacity(0.58), fontSize: 12),
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StrategyChip extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StrategyChip({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.075),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Text(
+        '$label: $value',
+        style: TextStyle(color: Colors.white.withOpacity(0.82), fontSize: 12, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -559,7 +619,7 @@ class _TrackedTipCard extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onEvaluateLatest,
                 icon: const Icon(Icons.fact_check_rounded),
-                label: Text(draws.isEmpty ? 'Keine Ziehungen' : 'Letzte prüfen'),
+                label: Text(draws.isEmpty ? 'Keine Ziehungen' : '1 Ziehung prüfen'),
               ),
               OutlinedButton.icon(
                 onPressed: onEvaluate52,
@@ -598,9 +658,9 @@ class _TipMiniStats extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: _Metric(label: 'Prüfungen', value: '${tip.checks.length}')),
+          Expanded(child: _Metric(label: 'Rücktests', value: '${tip.checks.length}')),
           Expanded(child: _Metric(label: 'Best', value: '$bestHits Treffer')),
-          Expanded(child: _Metric(label: 'ROI', value: '${roi.toStringAsFixed(1).replaceAll('.', ',')} %')),
+          Expanded(child: _Metric(label: 'Rücktest-ROI', value: '${roi.toStringAsFixed(1).replaceAll('.', ',')} %')),
           Expanded(child: _Metric(label: 'Gewinnreihen', value: '$winRows')),
         ],
       ),

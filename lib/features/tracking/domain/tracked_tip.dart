@@ -13,7 +13,7 @@ extension TrackedTipTypeLabel on TrackedTipType {
       case TrackedTipType.normal:
         return 'Normal';
       case TrackedTipType.ai:
-        return 'AI';
+        return 'KI / Signal';
       case TrackedTipType.fullSystem:
         return 'Vollsystem';
       case TrackedTipType.vew:

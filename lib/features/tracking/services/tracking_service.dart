@@ -12,6 +12,11 @@ class TrackingStrategySummary {
   final double prize;
   final int bestHits;
   final int winRows;
+  final int usefulChecks;
+  final int superNumberHits;
+  final int? bestWinClass;
+  final double averageBestHits;
+  final DateTime? latestCheckDate;
 
   const TrackingStrategySummary({
     required this.type,
@@ -21,12 +26,18 @@ class TrackingStrategySummary {
     required this.prize,
     required this.bestHits,
     required this.winRows,
+    required this.usefulChecks,
+    required this.superNumberHits,
+    required this.bestWinClass,
+    required this.averageBestHits,
+    required this.latestCheckDate,
   });
 
   double get netValue => prize - stake;
   double get roiPercent => LottoWinValueModel.roiPercent(prize: prize, stake: stake);
   String get roiLabel => LottoWinValueModel.roiLabel(prize: prize, stake: stake);
   String get performanceLabel => LottoWinValueModel.performanceLabel(prize: prize, stake: stake);
+  String get bestWinClassLabel => bestWinClass == null ? '-' : 'GK $bestWinClass';
 }
 
 class TrackingService {
@@ -203,6 +214,24 @@ class TrackingService {
       final prize = groupedTips.fold<double>(0, (sum, tip) => sum + tip.totalPrize);
       final bestHits = checks.fold<int>(0, (best, check) => check.bestHits > best ? check.bestHits : best);
       final winRows = checks.fold<int>(0, (sum, check) => sum + check.winningRows);
+      final usefulChecks = checks.where((check) => check.bestHits >= 3 || check.bestWinClass != null).length;
+      final bestWinClass = checks.fold<int?>(null, (best, check) {
+        final winClass = check.bestWinClass;
+        if (winClass == null) return best;
+        if (best == null || winClass < best) return winClass;
+        return best;
+      });
+      final averageBestHits = checks.isEmpty
+          ? 0.0
+          : checks.fold<int>(0, (sum, check) => sum + check.bestHits) / checks.length;
+      final latestCheckDate = checks.fold<DateTime?>(null, (latest, check) {
+        if (latest == null || check.drawDate.isAfter(latest)) return check.drawDate;
+        return latest;
+      });
+      final superNumberHits = groupedTips.fold<int>(0, (sum, tip) {
+        if (tip.superNumber == null) return sum;
+        return sum + tip.checks.where((check) => check.drawSuperNumber == tip.superNumber).length;
+      });
 
       result.add(
         TrackingStrategySummary(
@@ -213,11 +242,22 @@ class TrackingService {
           prize: prize,
           bestHits: bestHits,
           winRows: winRows,
+          usefulChecks: usefulChecks,
+          superNumberHits: superNumberHits,
+          bestWinClass: bestWinClass,
+          averageBestHits: averageBestHits,
+          latestCheckDate: latestCheckDate,
         ),
       );
     }
 
-    result.sort((a, b) => b.roiPercent.compareTo(a.roiPercent));
+    result.sort((a, b) {
+      final bestHitCompare = b.bestHits.compareTo(a.bestHits);
+      if (bestHitCompare != 0) return bestHitCompare;
+      final usefulCompare = b.usefulChecks.compareTo(a.usefulChecks);
+      if (usefulCompare != 0) return usefulCompare;
+      return b.roiPercent.compareTo(a.roiPercent);
+    });
     return result;
   }
 
