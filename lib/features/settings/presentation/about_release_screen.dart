@@ -24,7 +24,7 @@ class AboutReleaseScreen extends StatelessWidget {
           children: [
             const SectionTitle(
               title: 'Lotto Mind AI – Release',
-              subtitle: 'Store-Status, Version und finale Freigabe-Checks',
+              subtitle: 'v31 App-Store-Readiness, Produktklarheit und finale Freigabe-Checks',
             ),
             const SizedBox(height: 20),
             AppCard(
@@ -38,7 +38,7 @@ class AboutReleaseScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   const _InfoRow(label: 'App-Name', value: 'Lotto Mind AI'),
                   const SizedBox(height: 10),
-                  const _InfoRow(label: 'Release-Stufe', value: 'Final Pro / Store Ready'),
+                  const _InfoRow(label: 'Release-Stufe', value: 'v31 App-Store-Readiness'),
                   const SizedBox(height: 10),
                   _InfoRow(label: 'Edition', value: state.edition.label),
                   const SizedBox(height: 10),
@@ -47,6 +47,8 @@ class AboutReleaseScreen extends StatelessWidget {
                   _InfoRow(label: 'Gespeicherte Ziehungen', value: '${state.drawResults.length}'),
                   const SizedBox(height: 10),
                   _InfoRow(label: 'Regelprofile', value: '${state.ruleProfiles.length}'),
+                  const SizedBox(height: 10),
+                  const _InfoRow(label: 'Stabilitätsstand', value: 'Release-Kandidat v30 + App-Store-Readiness v31'),
                 ],
               ),
             ),
@@ -61,11 +63,31 @@ class AboutReleaseScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 14),
                   _ReleaseLine('App startet stabil auf echtem Gerät'),
-                  _ReleaseLine('Generator, Analyse und Meine Tipps laufen fehlerfrei'),
-                  _ReleaseLine('Branding ist überall auf Lotto Mind AI umgestellt'),
-                  _ReleaseLine('AAB statt APK für den Play-Upload vorbereitet'),
-                  _ReleaseLine('Versionsnummer und versionCode wurden erhöht'),
-                  _ReleaseLine('Datensicherheitsangaben und Datenschutzerklärung sind vorbereitet'),
+                  _ReleaseLine('Generator, Analyse, Meine Tipps und Tracking Pro laufen fehlerfrei'),
+                  _ReleaseLine('Navigation, Startseite, Ziehungen, Mehr und Einstellungen sind vereinfacht'),
+                  _ReleaseLine('Import, Superzahl, 8-Wochen-Suche und Persistenz wurden gegengeprüft'),
+                  _ReleaseLine('Signalmodell, Strategie-Tracking und Rücktest-Anzeige sind integriert'),
+                  _ReleaseLine('Vor Store-Upload: Versionsnummer, Datenschutz und AAB final prüfen'),
+                  _ReleaseLine('Store-Texte ohne Gewinnversprechen oder sichere Vorhersage formulieren'),
+                  _ReleaseLine('Normal / Pro / Premium als vorbereitet kennzeichnen, solange keine echte Paywall aktiv ist'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+            const AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _BlockHeader(
+                    title: 'App-Store-Readiness',
+                    subtitle: 'Kurze Leitplanken für Beschreibung, Screenshots und Review.',
+                  ),
+                  SizedBox(height: 14),
+                  _ReleaseLine('Beschreibung: Analyse historischer Ziehungsdaten, keine Gewinnzusage'),
+                  _ReleaseLine('Screenshots: Start, Generator, Meine Tipps, Ziehungen, Tracking Pro'),
+                  _ReleaseLine('Datenschutz: lokale Speicherung, Export/Backup und externe Links klar erklären'),
+                  _ReleaseLine('Review-Hinweis: Glücksspielteilnahme erfolgt außerhalb der App beim Anbieter'),
                 ],
               ),
             ),
@@ -80,12 +102,13 @@ class AboutReleaseScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 14),
                   Text(
-                    '1. App-Icon und Splash final prüfen'
-                    '2. Build mit Release-Signatur als AAB erzeugen'
-                    '3. Play App Signing aktivieren'
-                    '4. Store-Eintrag, Screenshots und Datenschutzerklärung eintragen'
-                    '5. Interne Testspur in der Play Console nutzen'
-                    '6. Erst danach Produktions-Release freigeben',
+                    '1. App-Icon und Splash final prüfen\n'
+                    '2. Versionsnummer und versionCode erhöhen\n'
+                    '3. Release-Signatur prüfen und AAB erzeugen\n'
+                    '4. Store-Eintrag, Screenshots und Datenschutzerklärung eintragen\n'
+                    '5. Interne Testspur in der Play Console nutzen\n'
+                    '6. Erst nach finalem Gerätetest Produktions-Release freigeben\n'
+                    '7. Git-Tag setzen, ZIP sichern und Release-Notizen archivieren',
                     style: TextStyle(height: 1.5, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                   ),
                 ],
