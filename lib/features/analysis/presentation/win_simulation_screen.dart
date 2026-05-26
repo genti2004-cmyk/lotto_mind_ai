@@ -161,21 +161,22 @@ class _TopWindowLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-            ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(height: 3),
         Text(
           value,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w900,
@@ -404,10 +405,13 @@ class _EuroLine extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Text(
               label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -415,12 +419,18 @@ class _EuroLine extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-              color: valueColor,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: valueColor,
+              ),
             ),
           ),
         ],

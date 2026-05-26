@@ -15,6 +15,7 @@ import '../../settings/domain/app_edition.dart';
 import '../../settings/domain/feature_gate.dart';
 import '../../settings/domain/rule_profile.dart';
 import '../../tips/domain/tip_evaluation_result.dart';
+import '../../tips/services/saved_tip_service.dart';
 import '../../evaluation/services/tip_match_service.dart';
 import '../domain/analysis_rule_set.dart';
 import '../domain/lotto_generator_service.dart';
@@ -22,6 +23,7 @@ import '../domain/lotto_tip.dart';
 import '../services/pro_prediction_engine.dart';
 import '../services/ai_master_mode_service.dart';
 import '../services/ai_learning_boost_service.dart' as ai_boost;
+import '../services/generated_tip_service.dart';
 import '../../tracking/services/tracking_service.dart';
 
 enum DrawMode {
@@ -335,6 +337,7 @@ class WinRangeEvaluation {
 
 class LottoAppState extends ChangeNotifier {
   static const TipMatchService _tipMatchService = TipMatchService();
+  static const SavedTipService _savedTipService = SavedTipService();
 
   final double _stakePerTip = 1.20;   // ✅ HIER rein
   double get stakePerTip => _stakePerTip;
@@ -384,6 +387,7 @@ class LottoAppState extends ChangeNotifier {
   bool get isAiMasterModeEnabled => _aiMasterMode != AiMasterMode.off;
 
   final LottoGeneratorService _generatorService = LottoGeneratorService();
+  final GeneratedTipService _generatedTipService = GeneratedTipService();
   final DrawCheckerService _drawCheckerService = DrawCheckerService();
   final LottoResultsImportService _importService = LottoResultsImportService();
   final AiMasterModeService _aiMasterModeService = const AiMasterModeService();
@@ -1224,14 +1228,9 @@ class LottoAppState extends ChangeNotifier {
     }
 
     final rawSavedTips = box.get(_savedTipsKey);
-    _savedTips.clear();
-    if (rawSavedTips is List) {
-      for (final item in rawSavedTips) {
-        if (item is Map) {
-          _savedTips.add(LottoTip.fromMap(Map<String, dynamic>.from(item)));
-        }
-      }
-    }
+    _savedTips
+      ..clear()
+      ..addAll(_savedTipService.parseTips(rawSavedTips));
 
     final rawLastTip = box.get(_lastGeneratedTipKey);
     if (rawLastTip is List) {
@@ -1403,7 +1402,7 @@ class LottoAppState extends ChangeNotifier {
     );
     await box.put(
       _savedTipsKey,
-      _savedTips.map((tip) => tip.toMap()).toList(),
+      _savedTipService.toStorage(_savedTips),
     );
     await box.put(
       _tipTrackingEntriesKey,
@@ -1523,7 +1522,7 @@ class LottoAppState extends ChangeNotifier {
       'exportedAt': DateTime.now().toIso8601String(),
       'rules': _rules.toMap(),
       'ruleProfiles': _ruleProfiles.map((e) => e.toMap()).toList(),
-      'savedTips': _savedTips.map((e) => e.toMap()).toList(),
+      'savedTips': _savedTipService.toStorage(_savedTips),
       'drawResults': _drawResults.map((e) => e.toMap()).toList(),
       'selectedDrawId': _selectedDrawForCheck?.id,
       'meta': {
@@ -1570,17 +1569,13 @@ class LottoAppState extends ChangeNotifier {
       _ruleProfiles.add(RuleProfile.fromMap(Map<String, dynamic>.from(item)));
     }
 
-    _savedTips.clear();
     final rawTips = payload['savedTips'];
     if (rawTips is! List) {
       throw Exception('Ungültige Tipps im Backup.');
     }
-    for (final item in rawTips) {
-      if (item is! Map) {
-        throw Exception('Ungültiger Tipp-Eintrag im Backup.');
-      }
-      _savedTips.add(LottoTip.fromMap(Map<String, dynamic>.from(item)));
-    }
+    _savedTips
+      ..clear()
+      ..addAll(_savedTipService.parseTips(rawTips));
 
     _drawResults.clear();
     final rawDraws = payload['drawResults'];
@@ -1639,11 +1634,8 @@ class LottoAppState extends ChangeNotifier {
   Future<void> toggleTipFavorite(String id) async {
     if (!gate.canUseFavorites) return;
 
-    final index = _savedTips.indexWhere((tip) => tip.id == id);
-    if (index == -1) return;
-
-    final current = _savedTips[index];
-    _savedTips[index] = current.copyWith(isFavorite: !current.isFavorite);
+    final changed = _savedTipService.toggleFavorite(_savedTips, id);
+    if (!changed) return;
 
     await _saveToStorage();
     notifyListeners();
@@ -1827,17 +1819,14 @@ class LottoAppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  int _generateRandomSuperNumber() {
-    return Random().nextInt(10);
-  }
-
   Future<void> generateTip() async {
     await generateRandomTip();
   }
 
   Future<void> generateRandomTip() async {
-    _lastGeneratedTip = _generatorService.generateRandomTip();
-    _lastGeneratedSuperNumber = _generateRandomSuperNumber();
+    final generated = _generatedTipService.generateRandomTip(_generatorService);
+    _lastGeneratedTip = generated.numbers;
+    _lastGeneratedSuperNumber = generated.superNumber;
     await _saveToStorage();
     notifyListeners();
   }
@@ -1850,8 +1839,13 @@ class LottoAppState extends ChangeNotifier {
     final result = predictionEngineResult;
 
     if (result.primaryTip.length == 6) {
-      _lastGeneratedTip = result.primaryTip;
-      _lastGeneratedSuperNumber = result.recommendedSuperNumber;
+      final generated = _generatedTipService.fromNumbers(
+        result.primaryTip,
+        recommendedSuperNumber: result.recommendedSuperNumber,
+        fallbackToRandomSuperNumber: false,
+      );
+      _lastGeneratedTip = generated.numbers;
+      _lastGeneratedSuperNumber = generated.superNumber;
     } else {
       final draws = analysisDrawResults;
 
@@ -1861,11 +1855,14 @@ class LottoAppState extends ChangeNotifier {
         coldNumberWindow: _analysisDrawCount,
       );
 
-      _lastGeneratedTip = _generatorService.generateAnalysisTip(
-        effectiveRules,
+      final generated = _generatedTipService.generateAnalysisTip(
+        generatorService: _generatorService,
+        predictionResult: result,
+        rules: effectiveRules,
         historicalDraws: draws,
       );
-      _lastGeneratedSuperNumber = result.recommendedSuperNumber ?? _generateRandomSuperNumber();
+      _lastGeneratedTip = generated.numbers;
+      _lastGeneratedSuperNumber = generated.superNumber;
     }
 
     await _saveToStorage();
@@ -2089,30 +2086,19 @@ class LottoAppState extends ChangeNotifier {
   Future<int> saveSystemRowsAsTips() async {
     if (_systemRows.isEmpty) return 0;
 
-    int added = 0;
-    for (int i = 0; i < _systemRows.length; i++) {
-      final row = List<int>.from(_systemRows[i])
-        ..sort();
-      final key = row.join('-');
-      final exists = _savedTips.any((tip) => tip.numbers.join('-') == key);
-      if (exists) continue;
+    final targetType = _defaultTipTargetDrawType();
+    final targetDate = _nextDateForDrawType(targetType);
+    final source = '${_systemPlayType == SystemPlayType.full ? 'voll' : 'vew'}_$_selectedSystemSize';
 
-      _savedTips.add(
-        LottoTip(
-          id: '${DateTime
-              .now()
-              .microsecondsSinceEpoch}_system_$i',
-          createdAt: DateTime.now(),
-          numbers: row,
-          superNumber: null,
-          source:
-          '${_systemPlayType == SystemPlayType.full
-              ? 'voll'
-              : 'vew'}_$_selectedSystemSize',
-        ),
-      );
-      added++;
-    }
+    final added = _savedTipService.addSystemRows(
+      tips: _savedTips,
+      rows: _systemRows,
+      source: source,
+      targetDrawType: targetType,
+      targetDrawDate: targetDate,
+    );
+
+    if (added == 0) return 0;
 
     _rebuildCheckResults(notify: false);
     await _saveToStorage();
@@ -2131,9 +2117,12 @@ class LottoAppState extends ChangeNotifier {
     final bestTip = bestAnalyzedTip;
     if (bestTip.length != 6) return;
 
-    _lastGeneratedTip = List<int>.from(bestTip)
-      ..sort();
-    _lastGeneratedSuperNumber = recommendedSuperNumber ?? _generateRandomSuperNumber();
+    final generated = _generatedTipService.fromNumbers(
+      bestTip,
+      recommendedSuperNumber: recommendedSuperNumber,
+    );
+    _lastGeneratedTip = generated.numbers;
+    _lastGeneratedSuperNumber = generated.superNumber;
     await _saveToStorage();
     notifyListeners();
   }
@@ -2152,9 +2141,12 @@ class LottoAppState extends ChangeNotifier {
     if (selected == null) return;
     if (selected.numbers.length != 6) return;
 
-    _lastGeneratedTip = List<int>.from(selected.numbers)
-      ..sort();
-    _lastGeneratedSuperNumber = recommendedSuperNumber ?? _generateRandomSuperNumber();
+    final generated = _generatedTipService.fromNumbers(
+      selected.numbers,
+      recommendedSuperNumber: recommendedSuperNumber,
+    );
+    _lastGeneratedTip = generated.numbers;
+    _lastGeneratedSuperNumber = generated.superNumber;
     await _saveToStorage();
     notifyListeners();
   }
@@ -2246,42 +2238,29 @@ class LottoAppState extends ChangeNotifier {
     DrawType? targetDrawType,
     DateTime? targetDrawDate,
   }) async {
-    final normalizedNumbers = List<int>.from(numbers)
-      ..removeWhere((number) => number < 1 || number > 49)
-      ..sort();
-
-    if (normalizedNumbers.length != 6) return false;
-
-    final normalizedSuperNumber =
-        superNumber != null && superNumber >= 0 && superNumber <= 9
-            ? superNumber
-            : null;
-
     final resolvedTargetType = targetDrawType ?? _defaultTipTargetDrawType();
     final resolvedTargetDate = targetDrawDate ?? _nextDateForDrawType(resolvedTargetType);
+    final normalizedSuperNumber = _savedTipService.normalizeSuperNumber(superNumber);
 
-    final exists = _savedTips.any((tip) {
-      final tipNumbers = List<int>.from(tip.numbers)..sort();
-      return tipNumbers.join('-') == normalizedNumbers.join('-') &&
-          tip.superNumber == normalizedSuperNumber &&
-          tip.targetDrawType == resolvedTargetType &&
-          _sameNullableDate(tip.targetDrawDate, resolvedTargetDate);
-    });
-
+    final exists = _savedTipService.containsDuplicate(
+      _savedTips,
+      numbers: numbers,
+      superNumber: normalizedSuperNumber,
+      targetDrawType: resolvedTargetType,
+      targetDrawDate: resolvedTargetDate,
+    );
     if (exists) return false;
 
-    _savedTips.insert(
-      0,
-      LottoTip(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        createdAt: DateTime.now(),
-        numbers: normalizedNumbers,
-        superNumber: normalizedSuperNumber,
-        source: source,
-        targetDrawType: resolvedTargetType,
-        targetDrawDate: resolvedTargetDate,
-      ),
+    final tip = _savedTipService.createTipFromNumbers(
+      numbers: numbers,
+      superNumber: normalizedSuperNumber,
+      source: source,
+      targetDrawType: resolvedTargetType,
+      targetDrawDate: resolvedTargetDate,
     );
+    if (tip == null) return false;
+
+    _savedTips.insert(0, tip);
 
     _rebuildCheckResults(notify: false);
     await _saveToStorage();
@@ -2306,7 +2285,9 @@ class LottoAppState extends ChangeNotifier {
   }
 
   Future<void> removeTip(String id) async {
-    _savedTips.removeWhere((tip) => tip.id == id);
+    final removed = _savedTipService.removeById(_savedTips, id);
+    if (!removed) return;
+
     _rebuildCheckResults(notify: false);
     await _saveToStorage();
     notifyListeners();

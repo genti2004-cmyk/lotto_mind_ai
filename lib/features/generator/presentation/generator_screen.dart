@@ -77,8 +77,10 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   }
 
   Future<void> _applyBestTip() async {
-    await context.read<LottoAppState>().applyBestAnalyzedTip();
-    await _showMessage('Pro-Tipp wurde übernommen.');
+    final state = context.read<LottoAppState>();
+    await state.applyBestAnalyzedTip();
+    await state.saveLastTip(source: 'analysis_pro');
+    await _showMessage('Pro-Tipp wurde übernommen und in Meine Tipps gespeichert.');
   }
 
   Future<void> _copyLastTip() async {
@@ -181,7 +183,7 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
-                      height: 980,
+                      height: 1380,
                       child: PageView(
                         controller: _pageController,
                         dragStartBehavior: DragStartBehavior.down,
@@ -1477,8 +1479,9 @@ class _AiPanel extends StatelessWidget {
               SizedBox(
                 width: 180,
                 child: PrimaryButton(
-                  label: 'Gewinnsimulation',
+                  label: 'Simulation',
                   icon: Icons.query_stats_rounded,
+                  compact: true,
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -1638,8 +1641,9 @@ class _JackpotPanel extends StatelessWidget {
               SizedBox(
                 width: 180,
                 child: PrimaryButton(
-                  label: 'Gewinnsimulation',
+                  label: 'Simulation',
                   icon: Icons.query_stats_rounded,
+                  compact: true,
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(

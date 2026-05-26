@@ -44,9 +44,9 @@ class PrimaryButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(compact ? 16 : 18),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
-          height: compact ? 48 : 54,
+          height: compact ? 42 : 54,
           alignment: Alignment.center,
-          padding: EdgeInsets.symmetric(horizontal: compact ? 14 : 16),
+          padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(compact ? 16 : 18),
             gradient: isDisabled
@@ -69,7 +69,7 @@ class PrimaryButton extends StatelessWidget {
           ),
           child: DefaultTextStyle(
             style: TextStyle(
-              fontSize: compact ? 14 : 15,
+              fontSize: compact ? 12.5 : 15,
               fontWeight: FontWeight.w800,
               color: isDisabled ? AppColors.textMuted : Colors.white,
             ),

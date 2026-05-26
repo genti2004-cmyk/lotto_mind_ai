@@ -138,8 +138,20 @@ class _SystemGeneratorScreenState extends State<SystemGeneratorScreen>
 
     final box = await _openBox();
     await box.put(ticket.id, ticket.toMap());
+
+    // Systemscheine bleiben im Systembereich gespeichert. Zusätzlich wird die
+    // erste spielbare Reihe als normaler Tipp in „Meine Tipps“ gespiegelt,
+    // damit Nutzer den erzeugten Tipp dort wiederfinden und prüfen können.
+    if (rows.isNotEmpty) {
+      await context.read<LottoAppState>().saveTipFromNumbers(
+        rows.first,
+        superNumber: ticket.superNumber,
+        source: 'system_${ticket.type}',
+      );
+    }
+
     await _loadSavedTickets();
-    _showSnack('${ticket.typeLabel} gespeichert.');
+    _showSnack('${ticket.typeLabel} gespeichert. Erste Reihe ist auch in Meine Tipps.');
   }
 
   Future<void> _deleteTicket(String id) async {
