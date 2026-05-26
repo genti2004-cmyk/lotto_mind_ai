@@ -14,6 +14,7 @@ import '../../analysis/presentation/ai_max_mode_screen.dart';
 import '../../analysis/domain/number_analysis_score.dart';
 import '../../analysis/presentation/win_simulation_screen.dart';
 import '../../generator/provider/lotto_app_state.dart';
+import '../../generator/domain/generator_strategy.dart';
 import '../../generator/services/ai_master_mode_service.dart';
 import '../../system/presentation/system_generator_screen.dart';
 
@@ -64,7 +65,13 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   }
 
   Future<void> _saveLastTip() async {
-    await context.read<LottoAppState>().saveLastTip(source: 'manual');
+    final state = context.read<LottoAppState>();
+    await state.saveLastTip(
+      source: _sourceForCurrentStrategy(state.lastGeneratedStrategy),
+      strategy: state.lastGeneratedStrategy == GeneratorStrategy.unknown
+          ? _strategyForCurrentTab()
+          : state.lastGeneratedStrategy,
+    );
     await _showMessage('Tipp wurde gespeichert.');
   }
 
@@ -89,7 +96,7 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   Future<void> _applyBestTip() async {
     final state = context.read<LottoAppState>();
     await state.applyBestAnalyzedTip();
-    await state.saveLastTip(source: 'analysis_pro');
+    await state.saveLastTip(source: 'analysis_pro', strategy: GeneratorStrategy.pro);
     await _showMessage('Pro-Tipp wurde übernommen und in Meine Tipps gespeichert.');
   }
 
@@ -111,6 +118,40 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
     await _showMessage('Tipp wurde kopiert.');
   }
 
+
+  GeneratorStrategy _strategyForCurrentTab() {
+    switch (_tabIndex) {
+      case 0:
+        return GeneratorStrategy.basis;
+      case 1:
+        return GeneratorStrategy.analysis;
+      case 2:
+        return GeneratorStrategy.pro;
+      case 3:
+        return GeneratorStrategy.system;
+      default:
+        return GeneratorStrategy.unknown;
+    }
+  }
+
+  String _sourceForCurrentStrategy(GeneratorStrategy strategy) {
+    switch (strategy) {
+      case GeneratorStrategy.basis:
+        return 'basis';
+      case GeneratorStrategy.analysis:
+        return 'analysis';
+      case GeneratorStrategy.signal:
+        return 'signal';
+      case GeneratorStrategy.pro:
+        return 'analysis_pro';
+      case GeneratorStrategy.system:
+        return 'system';
+      case GeneratorStrategy.manual:
+        return 'manual';
+      default:
+        return _strategyForCurrentTab().name;
+    }
+  }
 
   String _currentModeLabel() {
     switch (_tabIndex) {

@@ -1,5 +1,6 @@
 import '../../draws/domain/draw_type.dart';
 import '../../generator/domain/lotto_tip.dart';
+import '../../generator/domain/generator_strategy.dart';
 
 /// Central helper for saved-tip persistence and duplicate handling.
 ///
@@ -58,6 +59,7 @@ class SavedTipService {
     required int? superNumber,
     required DrawType targetDrawType,
     required DateTime? targetDrawDate,
+    GeneratorStrategy? strategy,
   }) {
     final normalizedNumbers = normalizeNumbers(numbers);
     if (normalizedNumbers == null) return false;
@@ -75,6 +77,7 @@ class SavedTipService {
   LottoTip? createTipFromNumbers({
     required List<int> numbers,
     required String source,
+    GeneratorStrategy? strategy,
     required DrawType targetDrawType,
     required DateTime? targetDrawDate,
     int? superNumber,
@@ -90,6 +93,7 @@ class SavedTipService {
       numbers: normalizedNumbers,
       superNumber: normalizeSuperNumber(superNumber),
       source: source,
+      strategy: strategy ?? GeneratorStrategyX.fromSource(source),
       targetDrawType: targetDrawType,
       targetDrawDate: targetDrawDate,
     );
@@ -99,6 +103,7 @@ class SavedTipService {
     required List<LottoTip> tips,
     required List<List<int>> rows,
     required String source,
+    GeneratorStrategy? strategy,
     required DrawType targetDrawType,
     DateTime? targetDrawDate,
   }) {
@@ -126,6 +131,7 @@ class SavedTipService {
           numbers: normalized,
           superNumber: null,
           source: source,
+          strategy: strategy ?? GeneratorStrategy.system,
           targetDrawType: targetDrawType,
           targetDrawDate: targetDrawDate,
         ),

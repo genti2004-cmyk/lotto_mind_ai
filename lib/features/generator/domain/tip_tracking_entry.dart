@@ -1,6 +1,7 @@
 import '../../draws/domain/draw_result.dart';
 import '../../winnings/domain/lotto_win_value_model.dart';
 import 'lotto_tip.dart';
+import 'generator_strategy.dart';
 
 class TipTrackingEntry {
   final String id;
@@ -14,6 +15,7 @@ class TipTrackingEntry {
   final int? tipSuperNumber;
   final int? drawSuperNumber;
   final String tipSource;
+  final GeneratorStrategy tipStrategy;
 
   const TipTrackingEntry({
     required this.id,
@@ -27,6 +29,7 @@ class TipTrackingEntry {
     required this.tipSuperNumber,
     required this.drawSuperNumber,
     required this.tipSource,
+    this.tipStrategy = GeneratorStrategy.unknown,
   });
 
   int get hitCount => matchedNumbers.length;
@@ -113,6 +116,7 @@ class TipTrackingEntry {
       tipSuperNumber: tip.superNumber,
       drawSuperNumber: draw.superNumber,
       tipSource: tip.source,
+      tipStrategy: tip.strategy,
     );
   }
 
@@ -129,6 +133,7 @@ class TipTrackingEntry {
       'tipSuperNumber': tipSuperNumber,
       'drawSuperNumber': drawSuperNumber,
       'tipSource': tipSource,
+      'tipStrategy': tipStrategy.name,
     };
   }
 
@@ -158,6 +163,9 @@ class TipTrackingEntry {
       tipSuperNumber: parseNullableInt(map['tipSuperNumber']),
       drawSuperNumber: parseNullableInt(map['drawSuperNumber']),
       tipSource: map['tipSource']?.toString() ?? 'manual',
+      tipStrategy: GeneratorStrategyX.fromName(map['tipStrategy']?.toString()) == GeneratorStrategy.unknown
+          ? GeneratorStrategyX.fromSource(map['tipSource']?.toString())
+          : GeneratorStrategyX.fromName(map['tipStrategy']?.toString()),
     );
   }
 }

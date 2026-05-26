@@ -77,12 +77,14 @@ class _MyTipsScreenState extends State<MyTipsScreen> {
       final numbersText = tip.numbers.join(' ');
       final superText = tip.superNumber?.toString() ?? '';
       final sourceText = _sourceLabel(tip.source).toLowerCase();
+      final strategyText = tip.strategyLabel.toLowerCase();
       final dateText = _formatDateTime(tip.createdAt).toLowerCase();
       final targetText = tip.targetLabel.toLowerCase();
 
       return numbersText.contains(query) ||
           superText.contains(query) ||
           sourceText.contains(query) ||
+          strategyText.contains(query) ||
           targetText.contains(query) ||
           dateText.contains(query);
     }).toList();
@@ -392,7 +394,7 @@ class _MyTipsScreenState extends State<MyTipsScreen> {
                         padding: const EdgeInsets.only(bottom: 14),
                         child: _TipTicketCard(
                           tip: tip,
-                          sourceLabel: _sourceLabel(tip.source),
+                          sourceLabel: tip.strategyLabel,
                           isSelected: _selectedTipIds.contains(tip.id),
                           selectionMode: _selectionMode,
                           hitCount: state.hitCountForTip(tip.id),
@@ -1660,6 +1662,12 @@ String _sourceLabel(String raw) {
   switch (raw) {
     case 'manual':
       return 'Manuell gespeichert';
+    case 'basis':
+      return 'Basis';
+    case 'signal':
+      return 'Signal';
+    case 'system':
+      return 'System';
     case 'analysis':
       return 'Analyse Tipp';
     case 'random':

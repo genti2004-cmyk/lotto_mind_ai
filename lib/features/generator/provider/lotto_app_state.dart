@@ -20,6 +20,7 @@ import '../../evaluation/services/tip_match_service.dart';
 import '../domain/analysis_rule_set.dart';
 import '../domain/lotto_generator_service.dart';
 import '../domain/lotto_tip.dart';
+import '../domain/generator_strategy.dart';
 import '../services/pro_prediction_engine.dart';
 import '../services/ai_master_mode_service.dart';
 import '../services/ai_learning_boost_service.dart' as ai_boost;
@@ -350,6 +351,7 @@ class LottoAppState extends ChangeNotifier {
   static const String _savedTipsKey = 'saved_tips';
   static const String _lastGeneratedTipKey = 'last_generated_tip';
   static const String _lastGeneratedSuperNumberKey = 'last_generated_super_number';
+  static const String _lastGeneratedStrategyKey = 'last_generated_strategy';
   static const String _drawResultsKey = 'draw_results';
   static const String _selectedDrawIdKey = 'selected_draw_id';
   static const String _rulesKey = 'rules';
@@ -514,6 +516,7 @@ class LottoAppState extends ChangeNotifier {
 
   List<int>? _lastGeneratedTip;
   int? _lastGeneratedSuperNumber;
+  GeneratorStrategy _lastGeneratedStrategy = GeneratorStrategy.unknown;
   int _selectedSystemSize = 7;
   SystemPlayType _systemPlayType = SystemPlayType.full;
   List<int> _systemBaseNumbers = [];
@@ -547,6 +550,8 @@ class LottoAppState extends ChangeNotifier {
   List<int>? get lastGeneratedTip => _lastGeneratedTip;
 
   int? get lastGeneratedSuperNumber => _lastGeneratedSuperNumber;
+
+  GeneratorStrategy get lastGeneratedStrategy => _lastGeneratedStrategy;
 
   int get selectedSystemSize => _selectedSystemSize;
 
@@ -1273,6 +1278,10 @@ class LottoAppState extends ChangeNotifier {
         ? parsedLastSuperNumber
         : null;
 
+    _lastGeneratedStrategy = GeneratorStrategyX.fromName(
+      box.get(_lastGeneratedStrategyKey)?.toString(),
+    );
+
     final rawSelectedSystemSize = box.get(_selectedSystemSizeKey);
     _selectedSystemSize =
         int.tryParse(rawSelectedSystemSize?.toString() ?? '') ?? 7;
@@ -1430,6 +1439,7 @@ class LottoAppState extends ChangeNotifier {
     );
     await box.put(_lastGeneratedTipKey, _lastGeneratedTip ?? <int>[]);
     await box.put(_lastGeneratedSuperNumberKey, _lastGeneratedSuperNumber);
+    await box.put(_lastGeneratedStrategyKey, _lastGeneratedStrategy.name);
     await box.put(
       _drawResultsKey,
       _drawResults.map((draw) => draw.toMap()).toList(),
@@ -1847,6 +1857,7 @@ class LottoAppState extends ChangeNotifier {
     final generated = _generatedTipService.generateRandomTip(_generatorService);
     _lastGeneratedTip = generated.numbers;
     _lastGeneratedSuperNumber = generated.superNumber;
+    _lastGeneratedStrategy = GeneratorStrategy.basis;
     await _saveToStorage();
     notifyListeners();
   }
@@ -1866,6 +1877,7 @@ class LottoAppState extends ChangeNotifier {
       );
       _lastGeneratedTip = generated.numbers;
       _lastGeneratedSuperNumber = generated.superNumber;
+      _lastGeneratedStrategy = GeneratorStrategy.pro;
     } else {
       final draws = analysisDrawResults;
 
@@ -1883,6 +1895,7 @@ class LottoAppState extends ChangeNotifier {
       );
       _lastGeneratedTip = generated.numbers;
       _lastGeneratedSuperNumber = generated.superNumber;
+      _lastGeneratedStrategy = GeneratorStrategy.analysis;
     }
 
     await _saveToStorage();
@@ -1901,6 +1914,7 @@ class LottoAppState extends ChangeNotifier {
 
     _lastGeneratedTip = generated.numbers;
     _lastGeneratedSuperNumber = generated.superNumber;
+    _lastGeneratedStrategy = GeneratorStrategy.signal;
     await _saveToStorage();
     notifyListeners();
   }
@@ -1981,6 +1995,7 @@ class LottoAppState extends ChangeNotifier {
 
     if (rows.isNotEmpty) {
       _lastGeneratedTip = List<int>.from(rows.first)..sort();
+      _lastGeneratedStrategy = GeneratorStrategy.system;
     }
 
     await _saveToStorage();
@@ -2005,6 +2020,7 @@ class LottoAppState extends ChangeNotifier {
     _systemRows = optimized.map((e) => List<int>.from(e.row)).toList();
     if (_systemRows.isNotEmpty) {
       _lastGeneratedTip = List<int>.from(_systemRows.first)..sort();
+      _lastGeneratedStrategy = GeneratorStrategy.system;
     }
 
     await _saveToStorage();
@@ -2130,6 +2146,7 @@ class LottoAppState extends ChangeNotifier {
       tips: _savedTips,
       rows: _systemRows,
       source: source,
+      strategy: GeneratorStrategy.system,
       targetDrawType: targetType,
       targetDrawDate: targetDate,
     );
@@ -2159,6 +2176,7 @@ class LottoAppState extends ChangeNotifier {
     );
     _lastGeneratedTip = generated.numbers;
     _lastGeneratedSuperNumber = generated.superNumber;
+    _lastGeneratedStrategy = GeneratorStrategy.pro;
     await _saveToStorage();
     notifyListeners();
   }
@@ -2183,6 +2201,7 @@ class LottoAppState extends ChangeNotifier {
     );
     _lastGeneratedTip = generated.numbers;
     _lastGeneratedSuperNumber = generated.superNumber;
+    _lastGeneratedStrategy = GeneratorStrategy.pro;
     await _saveToStorage();
     notifyListeners();
   }
@@ -2271,6 +2290,7 @@ class LottoAppState extends ChangeNotifier {
     List<int> numbers, {
     int? superNumber,
     String source = 'manual',
+    GeneratorStrategy? strategy,
     DrawType? targetDrawType,
     DateTime? targetDrawDate,
   }) async {
@@ -2284,6 +2304,7 @@ class LottoAppState extends ChangeNotifier {
       superNumber: normalizedSuperNumber,
       targetDrawType: resolvedTargetType,
       targetDrawDate: resolvedTargetDate,
+      strategy: strategy,
     );
     if (exists) return false;
 
@@ -2291,6 +2312,7 @@ class LottoAppState extends ChangeNotifier {
       numbers: numbers,
       superNumber: normalizedSuperNumber,
       source: source,
+      strategy: strategy ?? GeneratorStrategyX.fromSource(source),
       targetDrawType: resolvedTargetType,
       targetDrawDate: resolvedTargetDate,
     );
@@ -2304,19 +2326,21 @@ class LottoAppState extends ChangeNotifier {
     return true;
   }
 
-  Future<void> saveLastTip({String source = 'analysis'}) async {
+  Future<void> saveLastTip({String source = 'analysis', GeneratorStrategy? strategy}) async {
     if (_lastGeneratedTip == null) return;
 
     await saveTipFromNumbers(
       _lastGeneratedTip!,
       superNumber: _lastGeneratedSuperNumber,
       source: source,
+      strategy: strategy ?? _lastGeneratedStrategy,
     );
   }
 
   void setGeneratedNumbers(List<int> numbers, {int? superNumber}) {
     _lastGeneratedTip = List<int>.from(numbers)..sort();
     _lastGeneratedSuperNumber = superNumber ?? _lastGeneratedSuperNumber;
+    _lastGeneratedStrategy = GeneratorStrategy.manual;
     notifyListeners();
   }
 

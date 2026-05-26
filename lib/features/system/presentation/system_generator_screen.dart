@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'package:lotto_mind_ai/features/draws/domain/draw_result.dart';
 import 'package:lotto_mind_ai/features/generator/provider/lotto_app_state.dart';
+import 'package:lotto_mind_ai/features/generator/domain/generator_strategy.dart';
 import 'package:lotto_mind_ai/features/system/domain/saved_system_play.dart';
 import 'package:lotto_mind_ai/features/system/services/system_ticket_evaluation_service.dart';
 import 'package:lotto_mind_ai/features/system/services/system_ai_number_service.dart';
@@ -147,6 +148,7 @@ class _SystemGeneratorScreenState extends State<SystemGeneratorScreen>
         rows.first,
         superNumber: ticket.superNumber,
         source: 'system_${ticket.type}',
+        strategy: GeneratorStrategy.system,
       );
     }
 

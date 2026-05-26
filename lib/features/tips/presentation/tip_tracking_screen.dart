@@ -543,7 +543,7 @@ class _TrackingEntryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Ziehung ${entry.drawDateLabel} • ${_sourceLabel(entry.tipSource)}',
+                      'Ziehung ${entry.drawDateLabel} • ${entry.tipStrategy.label}',
                       style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ],

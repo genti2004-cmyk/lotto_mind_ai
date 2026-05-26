@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../draws/domain/draw_result.dart';
 import '../../generator/provider/lotto_app_state.dart';
+import '../../generator/domain/generator_strategy.dart';
 import '../../winnings/domain/lotto_win_value_model.dart';
 import '../domain/tracked_tip.dart';
 import '../services/tracking_service.dart';
@@ -161,6 +162,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
       numbers,
       superNumber: superNumber,
       source: 'tracking_pro',
+      strategy: appState.lastGeneratedStrategy == GeneratorStrategy.unknown
+          ? GeneratorStrategy.pro
+          : appState.lastGeneratedStrategy,
     );
 
     final tip = _service.createTip(

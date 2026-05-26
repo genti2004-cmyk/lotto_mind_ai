@@ -1,4 +1,5 @@
 import '../../draws/domain/draw_type.dart';
+import 'generator_strategy.dart';
 
 class LottoTip {
   final String id;
@@ -6,20 +7,22 @@ class LottoTip {
   final List<int> numbers;
   final int? superNumber;
   final String source;
+  final GeneratorStrategy strategy;
   final DrawType targetDrawType;
   final DateTime? targetDrawDate;
   final bool isFavorite;
 
-  const LottoTip({
+  LottoTip({
     required this.id,
     required this.createdAt,
     required this.numbers,
     required this.source,
+    GeneratorStrategy? strategy,
     this.superNumber,
     this.targetDrawType = DrawType.unknown,
     this.targetDrawDate,
     this.isFavorite = false,
-  });
+  }) : strategy = strategy ?? GeneratorStrategyX.fromSource(source);
 
   LottoTip copyWith({
     String? id,
@@ -28,6 +31,7 @@ class LottoTip {
     int? superNumber,
     bool clearSuperNumber = false,
     String? source,
+    GeneratorStrategy? strategy,
     DrawType? targetDrawType,
     DateTime? targetDrawDate,
     bool clearTargetDrawDate = false,
@@ -39,6 +43,7 @@ class LottoTip {
       numbers: numbers ?? this.numbers,
       superNumber: clearSuperNumber ? null : (superNumber ?? this.superNumber),
       source: source ?? this.source,
+      strategy: strategy ?? this.strategy,
       targetDrawType: targetDrawType ?? this.targetDrawType,
       targetDrawDate: clearTargetDrawDate ? null : (targetDrawDate ?? this.targetDrawDate),
       isFavorite: isFavorite ?? this.isFavorite,
@@ -60,6 +65,8 @@ class LottoTip {
     return 'Ziel: $typeLabel, $day.$month.$year';
   }
 
+  String get strategyLabel => strategy.label;
+
   static DrawType _drawTypeFromRaw(dynamic raw) {
     final text = raw?.toString() ?? '';
     return DrawType.values.firstWhere(
@@ -75,6 +82,7 @@ class LottoTip {
       'numbers': numbers,
       'superNumber': superNumber,
       'source': source,
+      'strategy': strategy.name,
       'targetDrawType': targetDrawType.name,
       'targetDrawDate': targetDrawDate?.toIso8601String(),
       'isFavorite': isFavorite,
@@ -96,6 +104,9 @@ class LottoTip {
         return raw;
       }(),
       source: map['source']?.toString() ?? 'manual',
+      strategy: GeneratorStrategyX.fromName(map['strategy']?.toString()) == GeneratorStrategy.unknown
+          ? GeneratorStrategyX.fromSource(map['source']?.toString())
+          : GeneratorStrategyX.fromName(map['strategy']?.toString()),
       targetDrawType: _drawTypeFromRaw(map['targetDrawType']),
       targetDrawDate: DateTime.tryParse(map['targetDrawDate']?.toString() ?? ''),
       isFavorite: map['isFavorite'] == true,
