@@ -61,13 +61,15 @@ extension GeneratorStrategyX on GeneratorStrategy {
     final source = raw?.toLowerCase().trim() ?? '';
     if (source.isEmpty) return GeneratorStrategy.unknown;
     if (source == 'manual') return GeneratorStrategy.manual;
-    if (source == 'random') return GeneratorStrategy.basis;
+    if (source == 'random' || source == 'basis') return GeneratorStrategy.basis;
+    if (source == 'signal' || source == 'ai_signal') return GeneratorStrategy.signal;
     if (source == 'analysis') return GeneratorStrategy.analysis;
-    if (source == 'signal') return GeneratorStrategy.signal;
-    if (source == 'ai' || source == 'analysis_pro' || source == 'pro') {
+    // Alte AI-Quellen waren meistens Analyse-/Signal-Tipps und sollen nicht
+    // mehr als eigener "AI"-Block erscheinen.
+    if (source == 'ai') return GeneratorStrategy.signal;
+    if (source == 'analysis_pro' || source == 'pro' || source == 'tracking_pro') {
       return GeneratorStrategy.pro;
     }
-    if (source == 'tracking_pro') return GeneratorStrategy.pro;
     if (source.startsWith('system_') ||
         source.startsWith('voll_') ||
         source.startsWith('vew_')) {

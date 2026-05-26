@@ -1862,7 +1862,7 @@ class LottoAppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> generateAnalysisTip() async {
+  Future<void> generateAnalysisTip({GeneratorStrategy strategy = GeneratorStrategy.analysis}) async {
     if (_aiMasterMode != AiMasterMode.off) {
       _applyAiMasterRecommendation();
     }
@@ -1877,7 +1877,7 @@ class LottoAppState extends ChangeNotifier {
       );
       _lastGeneratedTip = generated.numbers;
       _lastGeneratedSuperNumber = generated.superNumber;
-      _lastGeneratedStrategy = GeneratorStrategy.pro;
+      _lastGeneratedStrategy = strategy;
     } else {
       final draws = analysisDrawResults;
 
@@ -1895,7 +1895,7 @@ class LottoAppState extends ChangeNotifier {
       );
       _lastGeneratedTip = generated.numbers;
       _lastGeneratedSuperNumber = generated.superNumber;
-      _lastGeneratedStrategy = GeneratorStrategy.analysis;
+      _lastGeneratedStrategy = strategy;
     }
 
     await _saveToStorage();

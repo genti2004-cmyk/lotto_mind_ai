@@ -577,7 +577,7 @@ class _TrackingEntryCard extends StatelessWidget {
 
   String _sourceLabel(String source) {
     final s = source.toLowerCase();
-    if (s.contains('ai')) return 'AI';
+    if (s.contains('ai')) return 'KI / Signal';
     if (s.contains('jackpot')) return 'Jackpot';
     if (s.contains('voll')) return 'Vollsystem';
     if (s.contains('vew')) return 'Intervall-System';

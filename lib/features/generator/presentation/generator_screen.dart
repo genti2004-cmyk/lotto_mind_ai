@@ -77,8 +77,10 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
 
   Future<void> _generateAnalysis() async {
     try {
-      await context.read<LottoAppState>().generateAnalysisTip();
-      await _showMessage('Analyse-Tipp wurde erstellt.');
+      await context.read<LottoAppState>().generateAnalysisTip(
+        strategy: _tabIndex == 2 ? GeneratorStrategy.pro : GeneratorStrategy.analysis,
+      );
+      await _showMessage(_tabIndex == 2 ? 'Pro-Tipp wurde erstellt.' : 'Analyse-Tipp wurde erstellt.');
     } catch (e) {
       await _showMessage(e.toString());
     }
