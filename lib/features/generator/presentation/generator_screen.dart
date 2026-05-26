@@ -11,6 +11,7 @@ import '../../../core/services/pdf_export_service.dart';
 import '../../../core/widgets/number_ball.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../analysis/presentation/ai_max_mode_screen.dart';
+import '../../analysis/domain/number_analysis_score.dart';
 import '../../analysis/presentation/win_simulation_screen.dart';
 import '../../generator/provider/lotto_app_state.dart';
 import '../../generator/services/ai_master_mode_service.dart';
@@ -1236,6 +1237,7 @@ class _AiPanel extends StatelessWidget {
     final ai = state.analysisAiSummary;
     final bestTip = state.bestAnalyzedTip;
     final signalNumbers = state.signalTipNumbers;
+    final signalScores = state.signalScores(limit: 6);
     final lastSimulation = state.bestCurrentTipWindow?.summary;
     final bestSimulation = state.bestAiTipWindow?.summary;
 
@@ -1529,6 +1531,8 @@ class _AiPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _BallRow(title: 'Signal-Tipp', numbers: signalNumbers),
+                const SizedBox(height: 12),
+                _SignalReasonList(scores: signalScores),
               ],
             ),
           ),
@@ -2093,6 +2097,107 @@ class _StepButton extends StatelessWidget {
           child: Text(label),
         ),
       ),
+    );
+  }
+}
+
+
+class _SignalReasonList extends StatelessWidget {
+  const _SignalReasonList({required this.scores});
+
+  final List<NumberAnalysisScore> scores;
+
+  @override
+  Widget build(BuildContext context) {
+    if (scores.isEmpty) {
+      return const Text(
+        'Noch nicht genug Ziehungen für eine Signal-Erklärung.',
+        style: TextStyle(
+          fontSize: 12,
+          height: 1.4,
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w600,
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Warum diese Zahlen auffällig sind:',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...scores.map(
+          (score) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  NumberBall(number: score.number, size: 30),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${score.mainReason} · Hybrid ${score.hybridPercentLabel}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          score.reasonBullets.join(' · '),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            height: 1.35,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${score.hitCount} Treffer im Fenster · ${score.lastSeenLabel}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Hinweis: Das Signalmodell bewertet vergangene Auffälligkeiten. Es ist keine sichere Vorhersage.',
+          style: TextStyle(
+            fontSize: 11,
+            height: 1.35,
+            color: AppColors.textMuted,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }

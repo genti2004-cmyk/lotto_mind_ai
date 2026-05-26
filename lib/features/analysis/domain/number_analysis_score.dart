@@ -48,4 +48,49 @@ class NumberAnalysisScore {
     if (best.value <= 0) return 'keine Auffälligkeit';
     return best.key;
   }
+
+  String get hybridPercentLabel => '${(hybridScore * 100).round()}%';
+
+  String get lastSeenLabel {
+    if (lastSeenDrawsAgo == null) return 'im aktuellen Fenster nicht gesehen';
+    if (lastSeenDrawsAgo == 0) return 'in der letzten Ziehung gesehen';
+    if (lastSeenDrawsAgo == 1) return 'vor 1 Ziehung gesehen';
+    return 'vor $lastSeenDrawsAgo Ziehungen gesehen';
+  }
+
+  List<String> get reasonBullets {
+    final reasons = <String>[];
+
+    if (frequencyScore >= 0.18) {
+      reasons.add('häufig im gewählten Analysefenster');
+    } else if (frequencyScore <= 0.06 && hitCount > 0) {
+      reasons.add('selten im gewählten Analysefenster');
+    }
+
+    if (overdueScore >= 0.65) {
+      reasons.add('hoher Rückstand');
+    } else if (lastSeenDrawsAgo == 0) {
+      reasons.add('sehr frisch gezogen');
+    }
+
+    if (intervalScore >= 0.65) {
+      reasons.add('auffälliges Intervall-Signal');
+    }
+
+    if (patternScore >= 0.35) {
+      reasons.add('Muster-/Nachbarschaftssignal');
+    }
+
+    if (reasons.isEmpty) {
+      reasons.add('ausgewogener Hybrid-Score');
+    }
+
+    return reasons;
+  }
+
+  String get shortExplanation {
+    final parts = reasonBullets.take(2).join(' · ');
+    return '$parts · Hybrid $hybridPercentLabel · $lastSeenLabel';
+  }
+
 }
