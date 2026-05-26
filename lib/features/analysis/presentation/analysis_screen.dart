@@ -8,6 +8,7 @@ import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_title.dart';
 import '../../draws/domain/draw_result.dart';
 import '../domain/analysis_signal.dart';
+import '../domain/number_analysis_score.dart';
 import '../services/number_analysis_service.dart';
 import '../../generator/provider/lotto_app_state.dart';
 import 'ai_max_mode_screen.dart';
@@ -22,8 +23,27 @@ class AnalysisScreen extends StatelessWidget {
     final summary = state.analysisSummary;
     final aiSummary = state.analysisAiSummary;
     final proSummary = state.analysisProSummary;
-    final signalScores = const NumberAnalysisService()
-        .topBySignal(state.analysisDrawResults, AnalysisSignal.hybrid, limit: 6);
+    const signalService = NumberAnalysisService();
+    final frequencyScores = signalService.topBySignal(
+      state.analysisDrawResults,
+      AnalysisSignal.frequency,
+      limit: 6,
+    );
+    final overdueScores = signalService.topBySignal(
+      state.analysisDrawResults,
+      AnalysisSignal.overdue,
+      limit: 6,
+    );
+    final intervalScores = signalService.topBySignal(
+      state.analysisDrawResults,
+      AnalysisSignal.interval,
+      limit: 6,
+    );
+    final hybridScores = signalService.topBySignal(
+      state.analysisDrawResults,
+      AnalysisSignal.hybrid,
+      limit: 6,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -63,7 +83,12 @@ class AnalysisScreen extends StatelessWidget {
               averageSpread: summary.averageSpread,
             ),
             const SizedBox(height: 14),
-            _SignalModelCard(scores: signalScores),
+            _SignalModelCard(
+              frequencyScores: frequencyScores,
+              overdueScores: overdueScores,
+              intervalScores: intervalScores,
+              hybridScores: hybridScores,
+            ),
             const SizedBox(height: 14),
             _AiInsightCard(
               aiSummary: aiSummary,
@@ -105,14 +130,23 @@ class AnalysisScreen extends StatelessWidget {
 
 
 class _SignalModelCard extends StatelessWidget {
-  const _SignalModelCard({required this.scores});
+  const _SignalModelCard({
+    required this.frequencyScores,
+    required this.overdueScores,
+    required this.intervalScores,
+    required this.hybridScores,
+  });
 
-  final List<dynamic> scores;
+  final List<NumberAnalysisScore> frequencyScores;
+  final List<NumberAnalysisScore> overdueScores;
+  final List<NumberAnalysisScore> intervalScores;
+  final List<NumberAnalysisScore> hybridScores;
+
+  bool get _hasScores => hybridScores.isNotEmpty &&
+      hybridScores.any((score) => score.hybridScore > 0 || score.hitCount > 0);
 
   @override
   Widget build(BuildContext context) {
-    final hasScores = scores.isNotEmpty && scores.any((score) => score.hybridScore > 0);
-
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +161,7 @@ class _SignalModelCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Diese Übersicht trennt Häufigkeit, Rückstand, Intervall und Muster. Sie bewertet Auffälligkeiten aus vergangenen Ziehungen, ohne eine sichere Vorhersage zu behaupten.',
+            'Die Analyse zeigt getrennt, welche Zahlen nach Häufigkeit, Rückstand, Intervall und Hybrid-Score aktuell auffällig sind. Das ist eine Bewertung historischer Muster, keine sichere Vorhersage.',
             style: TextStyle(
               fontSize: 13,
               height: 1.4,
@@ -136,7 +170,7 @@ class _SignalModelCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          if (!hasScores)
+          if (!_hasScores)
             const Text(
               'Noch nicht genug Ziehungen für eine belastbare Signalübersicht.',
               style: TextStyle(
@@ -146,35 +180,252 @@ class _SignalModelCard extends StatelessWidget {
               ),
             )
           else ...[
+            _SignalTopRow(
+              title: 'Häufigkeit',
+              subtitle: 'kam im Analysefenster überdurchschnittlich oft vor',
+              icon: Icons.bar_chart_rounded,
+              scores: frequencyScores,
+              signal: AnalysisSignal.frequency,
+            ),
+            const SizedBox(height: 12),
+            _SignalTopRow(
+              title: 'Rückstand',
+              subtitle: 'liegt aktuell länger zurück als üblich',
+              icon: Icons.history_toggle_off_rounded,
+              scores: overdueScores,
+              signal: AnalysisSignal.overdue,
+            ),
+            const SizedBox(height: 12),
+            _SignalTopRow(
+              title: 'Intervall',
+              subtitle: 'aktueller Abstand passt zum typischen Zahlenzyklus',
+              icon: Icons.timeline_rounded,
+              scores: intervalScores,
+              signal: AnalysisSignal.interval,
+            ),
+            const SizedBox(height: 12),
+            _SignalTopRow(
+              title: 'Hybrid',
+              subtitle: 'kombiniert Häufigkeit, Rückstand, Intervall und Muster',
+              icon: Icons.auto_awesome_rounded,
+              scores: hybridScores,
+              signal: AnalysisSignal.hybrid,
+              highlighted: true,
+            ),
+            const SizedBox(height: 14),
+            const _SignalLegend(),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SignalTopRow extends StatelessWidget {
+  const _SignalTopRow({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.scores,
+    required this.signal,
+    this.highlighted = false,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final List<NumberAnalysisScore> scores;
+  final AnalysisSignal signal;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final topScores = scores.take(6).toList();
+    final top = topScores.isEmpty ? null : topScores.first;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: highlighted ? AppColors.infoSoft : AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: highlighted ? AppColors.primary.withValues(alpha: 0.28) : AppColors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: highlighted ? Colors.white : AppColors.infoSoft,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 18, color: AppColors.primaryDark),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (top != null) ...[
+                const SizedBox(width: 8),
+                _SignalScoreBadge(value: top.scoreFor(signal)),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (topScores.isEmpty)
+            const Text(
+              'Keine Daten im aktuellen Analysefenster.',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            )
+          else
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: scores
-                  .take(6)
-                  .map<Widget>(
-                    (score) => NumberBall(
-                      number: score.number as int,
-                      size: 38,
-                      highlighted: true,
+              children: topScores
+                  .map(
+                    (score) => _SignalNumberPill(
+                      score: score,
+                      signal: signal,
+                      highlighted: highlighted,
                     ),
                   )
                   .toList(),
             ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: const [
-                _SignalChip(label: 'Häufigkeit'),
-                _SignalChip(label: 'Rückstand'),
-                _SignalChip(label: 'Intervall'),
-                _SignalChip(label: 'Muster'),
-                _SignalChip(label: 'Hybrid'),
-              ],
+          if (top != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Top: ${top.number} · ${top.shortExplanation}',
+              style: const TextStyle(
+                fontSize: 11,
+                height: 1.35,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ],
       ),
+    );
+  }
+}
+
+class _SignalNumberPill extends StatelessWidget {
+  const _SignalNumberPill({
+    required this.score,
+    required this.signal,
+    required this.highlighted,
+  });
+
+  final NumberAnalysisScore score;
+  final AnalysisSignal signal;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = (score.scoreFor(signal) * 100).round().clamp(0, 100);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      decoration: BoxDecoration(
+        color: highlighted ? Colors.white : AppColors.background,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          NumberBall(
+            number: score.number,
+            size: 30,
+            highlighted: highlighted,
+          ),
+          const SizedBox(width: 7),
+          Text(
+            '$percent%',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SignalScoreBadge extends StatelessWidget {
+  const _SignalScoreBadge({required this.value});
+
+  final double value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '${(value * 100).round().clamp(0, 100)}%',
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+class _SignalLegend extends StatelessWidget {
+  const _SignalLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: const [
+        _SignalChip(label: 'Häufigkeit'),
+        _SignalChip(label: 'Rückstand'),
+        _SignalChip(label: 'Intervall'),
+        _SignalChip(label: 'Muster'),
+        _SignalChip(label: 'Hybrid'),
+      ],
     );
   }
 }
