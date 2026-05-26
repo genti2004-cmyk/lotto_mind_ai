@@ -2,46 +2,92 @@ import '../../features/settings/domain/app_edition.dart';
 
 /// Beschreibt die geplante Produktlogik, ohne bereits eine Paywall zu erzwingen.
 ///
-/// Diese Datei dient als stabile Grundlage für Normal, Pro und Premium.
-/// Screens können später diese Daten verwenden, um Funktionen klar zu erklären.
+/// Diese Datei ist die zentrale Grundlage für Normal, Pro und Premium. Screens
+/// können dieselben Daten nutzen, damit Funktionsumfang, Labels und spätere
+/// Freischaltungen konsistent bleiben.
 class ProductPlan {
   final AppEdition edition;
-  final List<String> highlights;
+  final String title;
+  final String shortDescription;
+  final String audience;
+  final List<String> included;
+  final List<String> planned;
 
   const ProductPlan({
     required this.edition,
-    required this.highlights,
+    required this.title,
+    required this.shortDescription,
+    required this.audience,
+    required this.included,
+    this.planned = const [],
   });
+
+  List<String> get highlights => included;
+
+  bool get isNormal => edition.isNormal;
+  bool get isPro => edition.isPro;
+  bool get isPremium => edition.isPremium;
 
   static const normal = ProductPlan(
     edition: AppEdition.free,
-    highlights: [
+    title: 'Normal',
+    shortDescription: 'Einfacher Einstieg für Ziehungen, Tipps und Grundprüfung.',
+    audience: 'Für Nutzer, die schnell einen Tipp erzeugen und später prüfen möchten.',
+    included: [
       'Ziehungen aktualisieren',
-      'Einfache Tipp-Erstellung',
+      'Basis-Tipp erstellen',
       'Meine Tipps speichern',
       'Grundauswertung nach Ziehung',
+      'Letzte Ziehungen ansehen',
     ],
   );
 
   static const pro = ProductPlan(
     edition: AppEdition.pro,
-    highlights: [
-      'Erweiterte Statistiken',
-      'Tracking Pro',
-      'Systemgenerator',
-      'Mehr Verlauf und Analysefenster',
+    title: 'Pro',
+    shortDescription: 'Mehr Kontrolle durch Analyse, Tracking und Systemtipps.',
+    audience: 'Für Nutzer, die Strategien vergleichen und Tipps langfristig beobachten möchten.',
+    included: [
+      'Analyse nach Häufigkeit, Intervall und Rückstand',
+      'Tracking Pro für gespeicherte Tipps',
+      'Systemschein-Generator',
+      'Erweiterter Ziehungsverlauf',
+      'Favoriten und Beobachtungsliste',
+    ],
+    planned: [
+      'Strategie-Bewertung über mehrere Wochen',
+      'Detailliertere Statistik-Karten',
     ],
   );
 
   static const premium = ProductPlan(
     edition: AppEdition.future,
-    highlights: [
-      'Expertenmodelle',
-      'Strategievergleich',
-      'Export Center',
-      'Cloud-/Komfortfunktionen vorbereitet',
+    title: 'Premium',
+    shortDescription: 'Vollausbau mit Expertenmodellen, Export und Komfortfunktionen.',
+    audience: 'Für Power-User, die maximale Transparenz, Backups und Expertenmodelle möchten.',
+    included: [
+      'Expertenmodelle und Strategievergleich',
+      'Export Center und Wiederherstellung',
+      'Premium-Regelprofile',
+      'Erweiterte System- und Analyseoptionen',
+    ],
+    planned: [
+      'Cloud-/Geräte-Sync vorbereitet',
+      'Komfortfunktionen für Backups und Reports',
+      'Premium-Auswertungsberichte',
     ],
   );
 
   static const all = [normal, pro, premium];
+
+  static ProductPlan fromEdition(AppEdition edition) {
+    switch (edition) {
+      case AppEdition.free:
+        return normal;
+      case AppEdition.pro:
+        return pro;
+      case AppEdition.future:
+        return premium;
+    }
+  }
 }
