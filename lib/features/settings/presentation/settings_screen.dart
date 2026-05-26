@@ -19,6 +19,12 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<LottoAppState>();
     final edition = state.edition;
+    final latestWednesday = state.wednesdayDrawResults.isEmpty
+        ? null
+        : state.wednesdayDrawResults.first;
+    final latestSaturday = state.saturdayDrawResults.isEmpty
+        ? null
+        : state.saturdayDrawResults.first;
 
     return Scaffold(
       appBar: AppBar(
@@ -31,7 +37,7 @@ class SettingsScreen extends StatelessWidget {
             const SectionTitle(
               title: 'Einstellungen',
               subtitle:
-              'App-Status, Analyse-Regeln, Profile und Systemfunktionen verwalten',
+                  'App-Status, Datenverwaltung und Expertenoptionen an einem sicheren Ort.',
             ),
             const SizedBox(height: 20),
 
@@ -42,10 +48,26 @@ class SettingsScreen extends StatelessWidget {
                   const _BlockHeader(
                     title: 'App-Status',
                     subtitle:
-                    'Alle wichtigen Daten deiner App und deines aktuellen Arbeitsstandes.',
+                        'Kurzer Überblick über deinen aktuellen Stand in der App.',
                   ),
                   const SizedBox(height: 16),
-                  _InfoLine(label: 'Edition', value: edition.label),
+                  _InfoLine(label: 'Aktueller Plan', value: edition.label),
+                  const SizedBox(height: 10),
+                  const _InfoLine(label: 'App-Status', value: 'Refactor v19'),
+                  const SizedBox(height: 10),
+                  _InfoLine(
+                    label: 'Letzte Mittwoch-Ziehung',
+                    value: latestWednesday == null
+                        ? 'Noch keine Daten'
+                        : _formatDate(latestWednesday.drawDate),
+                  ),
+                  const SizedBox(height: 10),
+                  _InfoLine(
+                    label: 'Letzte Samstag-Ziehung',
+                    value: latestSaturday == null
+                        ? 'Noch keine Daten'
+                        : _formatDate(latestSaturday.drawDate),
+                  ),
                   const SizedBox(height: 10),
                   _InfoLine(
                     label: 'Gespeicherte Tipps',
@@ -58,8 +80,68 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   _InfoLine(
-                    label: 'Regelprofile',
-                    value: state.ruleProfiles.length.toString(),
+                    label: 'Tracking-Prüfungen',
+                    value: state.tipTrackingEntries.length.toString(),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _BlockHeader(
+                    title: 'Darstellung & Nutzung',
+                    subtitle:
+                        'Die wichtigsten Alltagsfunktionen bleiben in der Hauptnavigation. Expertenbereiche liegen unter „Mehr“.',
+                  ),
+                  const SizedBox(height: 14),
+                  _StatusNote(
+                    icon: Icons.dashboard_customize_rounded,
+                    title: 'Übersichtlicher Modus aktiv',
+                    text:
+                        'Start, Generator, Meine Tipps und Ziehungen sind für normale Nutzer priorisiert.',
+                  ),
+                  const SizedBox(height: 12),
+                  _StatusNote(
+                    icon: Icons.workspace_premium_rounded,
+                    title: '${edition.label}-Plan',
+                    text: edition.subtitle,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _BlockHeader(
+                    title: 'Datenverwaltung',
+                    subtitle:
+                        'Sichere deine Daten, bevor du importierst, testest oder später größere Änderungen machst.',
+                  ),
+                  const SizedBox(height: 14),
+                  const _WarningBox(
+                    text:
+                        'Wichtige Daten niemals direkt löschen, ohne vorher eine Gesamtsicherung im Export Center zu erstellen.',
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ExportCenterScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.ios_share_rounded),
+                    label: const Text('Export Center öffnen'),
                   ),
                 ],
               ),
@@ -74,7 +156,7 @@ class SettingsScreen extends StatelessWidget {
                   const _BlockHeader(
                     title: 'Analyse-Regeln',
                     subtitle:
-                    'Aktive Regeln für die AI-Analyse und Tipp-Generierung.',
+                        'Feinsteuerung für Tipp-Erzeugung und Analyse. Für normale Nutzung müssen diese Werte nicht geändert werden.',
                   ),
                   const SizedBox(height: 16),
                   _InfoLine(
@@ -85,7 +167,7 @@ class SettingsScreen extends StatelessWidget {
                   _InfoLine(
                     label: 'Niedrige Zahlen (1 bis 24)',
                     value:
-                    '${state.rules.minLowNumbers} bis ${state.rules.maxLowNumbers}',
+                        '${state.rules.minLowNumbers} bis ${state.rules.maxLowNumbers}',
                   ),
                   const SizedBox(height: 10),
                   _InfoLine(
@@ -93,7 +175,7 @@ class SettingsScreen extends StatelessWidget {
                     value: '${state.rules.minSum} bis ${state.rules.maxSum}',
                   ),
                   const SizedBox(height: 18),
-                  FilledButton.icon(
+                  OutlinedButton.icon(
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -111,9 +193,9 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             const _BlockHeader(
-              title: 'Weitere Bereiche',
+              title: 'Weitere Verwaltung',
               subtitle:
-              'Zusätzliche Verwaltungs- und Projektbereiche in klarer Reihenfolge.',
+                  'Optionen für Profile, Produktstufen und technische Informationen.',
             ),
             const SizedBox(height: 12),
 
@@ -132,21 +214,7 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             _NavCard(
-              title: 'Backup & Export',
-              subtitle: 'Sichern, teilen, exportieren und importieren',
-              icon: Icons.ios_share_rounded,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const ExportCenterScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-
-            _NavCard(
-              title: 'Pro-Funktionen',
+              title: 'Normal / Pro / Premium',
               subtitle: edition.subtitle,
               icon: Icons.workspace_premium_rounded,
               onTap: () {
@@ -161,7 +229,7 @@ class SettingsScreen extends StatelessWidget {
 
             _NavCard(
               title: 'Release-Info',
-              subtitle: 'Release-Status und letzte Checkliste',
+              subtitle: 'Technischer Stand, Checkliste und letzte Änderungen',
               icon: Icons.rocket_launch_rounded,
               onTap: () {
                 Navigator.of(context).push(
@@ -177,7 +245,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
-
 class _BlockHeader extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -285,6 +352,95 @@ class _NavCard extends StatelessWidget {
   }
 }
 
+
+class _StatusNote extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String text;
+
+  const _StatusNote({
+    required this.icon,
+    required this.title,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.infoSoft,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WarningBox extends StatelessWidget {
+  final String text;
+
+  const _WarningBox({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.warningSoft,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                height: 1.35,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _InfoLine extends StatelessWidget {
   final String label;
   final String value;
@@ -322,4 +478,10 @@ class _InfoLine extends StatelessWidget {
       ],
     );
   }
+}
+
+String _formatDate(DateTime value) {
+  final day = value.day.toString().padLeft(2, '0');
+  final month = value.month.toString().padLeft(2, '0');
+  return '$day.$month.${value.year}';
 }

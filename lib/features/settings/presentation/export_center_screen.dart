@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import '../domain/app_edition.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,6 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_title.dart';
 import '../../generator/provider/lotto_app_state.dart';
-import '../domain/app_edition.dart';
 
 class ExportCenterScreen extends StatefulWidget {
   const ExportCenterScreen({super.key});
