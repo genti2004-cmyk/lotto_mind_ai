@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_ce/hive.dart';
 import '../domain/advanced_number_analysis.dart';
-import '../domain/tip_tracking_entry.dart';
+import '../../tracking/domain/tip_tracking_entry.dart';
 
 import '../../draws/domain/draw_checker_service.dart';
 import '../../draws/domain/draw_result.dart';
