@@ -55,7 +55,7 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _InfoLine(label: 'Aktueller Plan', value: edition.label),
                   const SizedBox(height: 10),
-                  const _InfoLine(label: 'App-Status', value: 'v33 Onboarding / Erster Start'),
+                  const _InfoLine(label: 'App-Status', value: 'v34 Start-Assistent / Nutzerführung'),
                   const SizedBox(height: 10),
                   _InfoLine(
                     label: 'Letzte Mittwoch-Ziehung',

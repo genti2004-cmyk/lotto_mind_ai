@@ -24,7 +24,7 @@ class AboutReleaseScreen extends StatelessWidget {
           children: [
             const SectionTitle(
               title: 'Lotto Mind AI – Release',
-              subtitle: 'v33 Onboarding / Erster Start, App-Store-Readiness und finale Freigabe-Checks',
+              subtitle: 'v34 Start-Assistent / Nutzerführung, App-Store-Readiness und finale Freigabe-Checks',
             ),
             const SizedBox(height: 20),
             AppCard(
@@ -38,7 +38,7 @@ class AboutReleaseScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   const _InfoRow(label: 'App-Name', value: 'Lotto Mind AI'),
                   const SizedBox(height: 10),
-                  const _InfoRow(label: 'Release-Stufe', value: 'v33 Onboarding / Erster Start'),
+                  const _InfoRow(label: 'Release-Stufe', value: 'v34 Start-Assistent / Nutzerführung'),
                   const SizedBox(height: 10),
                   _InfoRow(label: 'Edition', value: state.edition.label),
                   const SizedBox(height: 10),
@@ -48,7 +48,7 @@ class AboutReleaseScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   _InfoRow(label: 'Regelprofile', value: '${state.ruleProfiles.length}'),
                   const SizedBox(height: 10),
-                  const _InfoRow(label: 'Stabilitätsstand', value: 'v30 Release-Kandidat + v31 App-Store-Readiness + v32 Hinweise + v33 Onboarding'),
+                  const _InfoRow(label: 'Stabilitätsstand', value: 'v30 Release-Kandidat + v31 App-Store-Readiness + v32 Hinweise + v33 Onboarding + v34 Start-Assistent'),
                 ],
               ),
             ),
@@ -70,6 +70,7 @@ class AboutReleaseScreen extends StatelessWidget {
                   _ReleaseLine('Vor Store-Upload: Versionsnummer, Datenschutz und AAB final prüfen'),
                   _ReleaseLine('Store-Texte ohne Gewinnversprechen oder sichere Vorhersage formulieren'),
                   _ReleaseLine('Hinweise zu Mindestalter, verantwortungsvollem Spielen und Anbieter-Abgabe sichtbar halten'),
+                  _ReleaseLine('Start-Assistent auf der Startseite prüfen'),
                   _ReleaseLine('Erster-Start-Anleitung für neue Nutzer öffnen und prüfen'),
                   _ReleaseLine('Normal / Pro / Premium als vorbereitet kennzeichnen, solange keine echte Paywall aktiv ist'),
                 ],
