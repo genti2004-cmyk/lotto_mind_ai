@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'widgets/ai_learning_boost_control_card.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -27,28 +26,10 @@ class GeneratorScreen extends StatefulWidget {
 
 class _GeneratorScreenState extends State<GeneratorScreen> {
   int _tabIndex = 0;
-  late final PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(initialPage: _tabIndex);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
 
   void _goToTab(int index) {
     if (_tabIndex == index) return;
     setState(() => _tabIndex = index);
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-    );
   }
 
   Future<void> _showMessage(String message) async {
@@ -169,6 +150,54 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
         return 'Analyse';
     }
   }
+
+  Widget _buildTabContent(LottoAppState state) {
+    final currentTip = _CurrentTipPanel(
+      state: state,
+      onSave: state.lastGeneratedTip == null ? null : _saveLastTip,
+      onCopy: state.lastGeneratedTip == null ? null : _copyLastTip,
+    );
+
+    switch (_tabIndex) {
+      case 0:
+        return _TabScrollView(
+          child: _NormalPanel(
+            state: state,
+            onGenerate: _generateRandom,
+            onSave: state.lastGeneratedTip == null ? null : _saveLastTip,
+            onCopy: state.lastGeneratedTip == null ? null : _copyLastTip,
+          ),
+          currentTip: currentTip,
+        );
+      case 1:
+        return _TabScrollView(
+          child: _AiPanel(
+            state: state,
+            onGenerate: _generateAnalysis,
+            onGenerateSignal: _generateSignalTip,
+            onApplyBest: state.bestAnalyzedTip.length == 6 ? _applyBestTip : null,
+          ),
+          currentTip: currentTip,
+        );
+      case 2:
+        return _TabScrollView(
+          child: _JackpotPanel(
+            state: state,
+            onGenerate: _generateAnalysis,
+            onApplyBest: state.bestAnalyzedTip.length == 6 ? _applyBestTip : null,
+          ),
+          currentTip: currentTip,
+        );
+      case 3:
+        return _TabScrollView(
+          child: _SystemEntryPanel(state: state),
+          currentTip: currentTip,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<LottoAppState>();
@@ -235,88 +264,13 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
                           state.lastGeneratedTip!.isNotEmpty,
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      height: 1380,
-                      child: PageView(
-                        controller: _pageController,
-                        dragStartBehavior: DragStartBehavior.down,
-                        onPageChanged: (value) {
-                          if (mounted) {
-                            setState(() => _tabIndex = value);
-                          }
-                        },
-                        children: [
-                          _TabScrollView(
-                            child: _NormalPanel(
-                              state: state,
-                              onGenerate: _generateRandom,
-                              onSave: state.lastGeneratedTip == null
-                                  ? null
-                                  : _saveLastTip,
-                              onCopy: state.lastGeneratedTip == null
-                                  ? null
-                                  : _copyLastTip,
-                            ),
-                            currentTip: _CurrentTipPanel(
-                              state: state,
-                              onSave: state.lastGeneratedTip == null
-                                  ? null
-                                  : _saveLastTip,
-                              onCopy: state.lastGeneratedTip == null
-                                  ? null
-                                  : _copyLastTip,
-                            ),
-                          ),
-                          _TabScrollView(
-                            child: _AiPanel(
-                              state: state,
-                              onGenerate: _generateAnalysis,
-                              onGenerateSignal: _generateSignalTip,
-                              onApplyBest: state.bestAnalyzedTip.length == 6
-                                  ? _applyBestTip
-                                  : null,
-                            ),
-                            currentTip: _CurrentTipPanel(
-                              state: state,
-                              onSave: state.lastGeneratedTip == null
-                                  ? null
-                                  : _saveLastTip,
-                              onCopy: state.lastGeneratedTip == null
-                                  ? null
-                                  : _copyLastTip,
-                            ),
-                          ),
-                          _TabScrollView(
-                            child: _JackpotPanel(
-                              state: state,
-                              onGenerate: _generateAnalysis,
-                              onApplyBest: state.bestAnalyzedTip.length == 6
-                                  ? _applyBestTip
-                                  : null,
-                            ),
-                            currentTip: _CurrentTipPanel(
-                              state: state,
-                              onSave: state.lastGeneratedTip == null
-                                  ? null
-                                  : _saveLastTip,
-                              onCopy: state.lastGeneratedTip == null
-                                  ? null
-                                  : _copyLastTip,
-                            ),
-                          ),
-                          _TabScrollView(
-                            child: _SystemEntryPanel(state: state),
-                            currentTip: _CurrentTipPanel(
-                              state: state,
-                              onSave: state.lastGeneratedTip == null
-                                  ? null
-                                  : _saveLastTip,
-                              onCopy: state.lastGeneratedTip == null
-                                  ? null
-                                  : _copyLastTip,
-                            ),
-                          ),
-                        ],
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 90),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: KeyedSubtree(
+                        key: ValueKey<int>(_tabIndex),
+                        child: _buildTabContent(state),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -901,10 +855,8 @@ class _TabScrollView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      primary: false,
-      physics: const ClampingScrollPhysics(),
-      padding: EdgeInsets.zero,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         child,
         const SizedBox(height: 14),

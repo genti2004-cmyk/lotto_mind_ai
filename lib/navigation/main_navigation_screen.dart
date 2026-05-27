@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:lotto_mind_ai/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:lotto_mind_ai/features/home/presentation/home_screen.dart';
 import 'package:lotto_mind_ai/features/generator/presentation/generator_screen.dart';
 import 'package:lotto_mind_ai/features/tips/presentation/my_tips_screen.dart';
 import 'package:lotto_mind_ai/features/draws/presentation/draw_results_screen.dart';
@@ -23,7 +23,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _index = 0;
 
   final List<Widget> _screens = const [
-    DashboardScreen(),
+    HomeScreen(),
     GeneratorScreen(),
     MyTipsScreen(),
     DrawResultsScreen(),

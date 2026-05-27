@@ -136,6 +136,8 @@ class _TipTrackingScreenState extends State<TipTrackingScreen> {
             const SizedBox(height: 14),
             _DistributionCard(distribution: distribution),
             const SizedBox(height: 14),
+            _StrategyLearningCard(entries: entries),
+            const SizedBox(height: 14),
             _FilterTabs(
               index: _filter,
               onChanged: (value) => setState(() => _filter = value),
@@ -453,6 +455,215 @@ class _DistributionRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+
+class _StrategyLearningCard extends StatelessWidget {
+  const _StrategyLearningCard({required this.entries});
+
+  final List<TipTrackingEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _StrategyLearningStats.fromEntries(entries);
+    final best = rows.isEmpty ? null : rows.first;
+
+    return _Panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.insights_rounded, color: AppColors.primary),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Strategie-Lernbericht',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Vergleicht gespeicherte Strategien im Rücktest. Das ist eine historische Auswertung, keine Gewinnzusage.',
+                      style: TextStyle(color: AppColors.textSecondary, height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (rows.isEmpty)
+            const Text(
+              'Noch keine Strategie-Daten vorhanden. Speichere Tipps aus Basis, Signal, Pro oder System und prüfe sie gegen Ziehungen.',
+              style: TextStyle(color: AppColors.textSecondary, height: 1.35),
+            )
+          else ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFF2E7D32).withValues(alpha: 0.18)),
+              ),
+              child: Text(
+                'Aktuell stärkste Strategie im Rücktest: ${best!.strategy.label} · bester Treffer ${best.bestHit} · ${best.relevantChecks}x ab 3 Treffern',
+                style: const TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.w900, height: 1.3),
+              ),
+            ),
+            const SizedBox(height: 12),
+            for (final row in rows)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _StrategyLearningRow(stats: row),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StrategyLearningRow extends StatelessWidget {
+  const _StrategyLearningRow({required this.stats});
+
+  final _StrategyLearningStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFD),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  stats.strategy.label,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+                ),
+              ),
+              _MiniBadge('${stats.bestHit} Best'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _InfoChip(label: 'Tipps', value: '${stats.tipCount}'),
+              _InfoChip(label: 'Prüfungen', value: '${stats.checkCount}'),
+              _InfoChip(label: 'Ø Treffer', value: stats.averageHits.toStringAsFixed(1)),
+              _InfoChip(label: '3+ Treffer', value: '${stats.relevantChecks}'),
+              _InfoChip(label: 'SZ', value: '${stats.superHits}'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            stats.summary,
+            style: const TextStyle(color: AppColors.textSecondary, height: 1.3, fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniBadge extends StatelessWidget {
+  const _MiniBadge(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w900),
+      ),
+    );
+  }
+}
+
+class _StrategyLearningStats {
+  const _StrategyLearningStats({
+    required this.strategy,
+    required this.tipCount,
+    required this.checkCount,
+    required this.bestHit,
+    required this.averageHits,
+    required this.relevantChecks,
+    required this.superHits,
+  });
+
+  final GeneratorStrategy strategy;
+  final int tipCount;
+  final int checkCount;
+  final int bestHit;
+  final double averageHits;
+  final int relevantChecks;
+  final int superHits;
+
+  String get summary {
+    if (checkCount == 0) return 'Noch keine historischen Prüfungen für diese Strategie.';
+    if (bestHit >= 4) return 'Starkes Rücktest-Signal. Beobachte, ob sich die Strategie in echten Zielziehungen bestätigt.';
+    if (relevantChecks > 0) return 'Mehrere brauchbare Rücktest-Prüfungen. Für eine belastbare Bewertung weiter Daten sammeln.';
+    return 'Bisher eher schwaches Rücktest-Signal. Strategie weiter beobachten, aber nicht überbewerten.';
+  }
+
+  static List<_StrategyLearningStats> fromEntries(List<TipTrackingEntry> entries) {
+    final grouped = <GeneratorStrategy, List<TipTrackingEntry>>{};
+    for (final entry in entries) {
+      grouped.putIfAbsent(entry.tipStrategy, () => <TipTrackingEntry>[]).add(entry);
+    }
+
+    final rows = grouped.entries.map((group) {
+      final groupEntries = group.value;
+      final tips = groupEntries.map((entry) => entry.tipId).toSet().length;
+      final totalHits = groupEntries.fold<int>(0, (sum, entry) => sum + entry.hitCount);
+      final bestHit = groupEntries.map((entry) => entry.hitCount).fold<int>(0, (a, b) => a > b ? a : b);
+      return _StrategyLearningStats(
+        strategy: group.key,
+        tipCount: tips,
+        checkCount: groupEntries.length,
+        bestHit: bestHit,
+        averageHits: groupEntries.isEmpty ? 0 : totalHits / groupEntries.length,
+        relevantChecks: groupEntries.where((entry) => entry.hitCount >= 3).length,
+        superHits: groupEntries.where((entry) => entry.superHit).length,
+      );
+    }).toList()
+      ..sort((a, b) {
+        final best = b.bestHit.compareTo(a.bestHit);
+        if (best != 0) return best;
+        final relevant = b.relevantChecks.compareTo(a.relevantChecks);
+        if (relevant != 0) return relevant;
+        return b.averageHits.compareTo(a.averageHits);
+      });
+
+    return rows;
   }
 }
 
