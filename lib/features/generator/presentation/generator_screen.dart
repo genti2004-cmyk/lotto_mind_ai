@@ -626,11 +626,11 @@ class _MetricCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: AppColors.infoSoft,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(data.icon, color: AppColors.primary, size: 20),
           ),
@@ -745,28 +745,28 @@ class _StrategyChoiceGuide extends StatelessWidget {
   String get _description {
     switch (index) {
       case 0:
-        return 'Ein schneller, ausgewogener Einstieg ohne Analysegewichtung. Gut, wenn Nutzer direkt einen einfachen Tipp speichern möchten.';
+        return 'Schneller Einstieg für einen einfachen, ausgewogenen Tipp.';
       case 1:
-        return 'Analyse nutzt Ziehungsverlauf, Häufigkeit, Rückstand, Intervall, Bereichs- und Abstandsmuster. Signal ist der transparenteste Analyse-Tipp.';
+        return 'Musteranalyse aus Häufigkeit, Rückstand, Intervall und Streuung.';
       case 2:
-        return 'Pro ist der erweiterte Bereich mit Simulationen, Kandidaten und mehr Details. Gedacht für Nutzer, die Strategien intensiver vergleichen möchten.';
+        return 'Erweiterte Kandidaten, Details und Simulationen für Strategievergleich.';
       case 3:
-        return 'System erzeugt mehrere Reihen beziehungsweise Systemscheine. Geeignet für strukturierte Varianten statt nur einer einzelnen Reihe.';
+        return 'Mehrere Reihen beziehungsweise Systemschein statt einzelner Reihe.';
       default:
-        return 'Wähle eine Strategie, erzeuge einen Tipp und speichere ihn anschließend in Meine Tipps.';
+        return 'Strategie wählen, Tipp erzeugen und in Meine Tipps speichern.';
     }
   }
 
   String get _bestFor {
     switch (index) {
       case 0:
-        return 'Schneller Start';
+        return 'direkt loslegen';
       case 1:
-        return 'Nachvollziehbare Musteranalyse';
+        return 'nachvollziehbare Signale';
       case 2:
-        return 'Erweiterte Auswertung';
+        return 'Expertenprüfung';
       case 3:
-        return 'Mehrere Reihen';
+        return 'mehrere Reihen';
       default:
         return 'Tipp-Erstellung';
     }
@@ -776,7 +776,7 @@ class _StrategyChoiceGuide extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.infoSoft,
         borderRadius: BorderRadius.circular(20),
@@ -786,15 +786,15 @@ class _StrategyChoiceGuide extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(_icon, color: AppColors.primary, size: 20),
+            child: Icon(_icon, color: AppColors.primary, size: 18),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -802,33 +802,35 @@ class _StrategyChoiceGuide extends StatelessWidget {
                 Text(
                   _title,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
                   _description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 12,
-                    height: 1.4,
+                    fontSize: 11,
+                    height: 1.25,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: Text(
-                    'Am besten für: $_bestFor',
+                    'Am besten: $_bestFor',
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w800,
                       color: AppColors.primary,
                     ),
@@ -1105,7 +1107,7 @@ class _SubCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surfaceSoft,
         borderRadius: BorderRadius.circular(20),
@@ -2581,7 +2583,7 @@ class _JackpotModeInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.deepOrange.withOpacity(0.08),
         borderRadius: BorderRadius.circular(18),
