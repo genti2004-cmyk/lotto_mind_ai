@@ -214,9 +214,11 @@ class _SignalModelCard extends StatelessWidget {
             const SizedBox(height: 12),
             _RangePatternRow(scores: rangeScores),
             const SizedBox(height: 12),
+            const _SpacingPatternInfoRow(),
+            const SizedBox(height: 12),
             _SignalTopRow(
               title: 'Hybrid',
-              subtitle: 'kombiniert Häufigkeit, Rückstand, Intervall, Muster und Bereichsverteilung',
+              subtitle: 'kombiniert Häufigkeit, Rückstand, Intervall, Muster, Bereichsverteilung und Streuung',
               icon: Icons.auto_awesome_rounded,
               scores: hybridScores,
               signal: AnalysisSignal.hybrid,
@@ -448,6 +450,53 @@ class _RangePatternRow extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SpacingPatternInfoRow extends StatelessWidget {
+  const _SpacingPatternInfoRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.scatter_plot_rounded, size: 18, color: AppColors.primaryDark),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Abstandsmuster',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Signal-Tipps werden zusätzlich auf Streuung geprüft: enge 3er-Cluster, sehr gleichmäßige Lücken und zu kleine Gesamtspanne werden sanft vermieden.',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
         ],
       ),
     );

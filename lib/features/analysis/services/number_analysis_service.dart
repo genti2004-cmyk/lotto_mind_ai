@@ -415,6 +415,47 @@ class NumberAnalysisService {
 
     // Wiederholer aus der letzten Ziehung sind erlaubt, aber nicht als Cluster.
     if (freshCount > 2) return false;
+
+    // v40: Abstandsmuster zwischen den sortierten Tippzahlen weich prüfen.
+    // Ziel ist keine Vorhersage, sondern eine natürlichere Verteilung:
+    // keine engen 3er-Cluster und keine künstlich gleichmäßigen Reihen.
+    if (nextNumbers.length >= 5 && _hasTightCluster(nextNumbers)) return false;
+    if (nextNumbers.length >= 6 && _looksTooRegular(nextNumbers)) return false;
+    if (nextNumbers.length >= 6 && _spread(nextNumbers) < 22) return false;
+
     return true;
+  }
+
+  bool _hasTightCluster(List<int> numbers) {
+    if (numbers.length < 3) return false;
+    final sorted = List<int>.from(numbers)..sort();
+    for (var i = 0; i <= sorted.length - 3; i++) {
+      if (sorted[i + 2] - sorted[i] <= 4) return true;
+    }
+    return false;
+  }
+
+  bool _looksTooRegular(List<int> numbers) {
+    if (numbers.length < 6) return false;
+    final sorted = List<int>.from(numbers)..sort();
+    final gaps = <int>[];
+    for (var i = 0; i < sorted.length - 1; i++) {
+      gaps.add(sorted[i + 1] - sorted[i]);
+    }
+    if (gaps.isEmpty) return false;
+
+    final average = gaps.reduce((a, b) => a + b) / gaps.length;
+    final maxDeviation = gaps
+        .map((gap) => (gap - average).abs())
+        .fold<double>(0, (maxValue, value) => math.max(maxValue, value));
+
+    // Fast identische Lücken wie 3, 12, 21, 30, 39, 48 wirken zu konstruiert.
+    return maxDeviation <= 1.2;
+  }
+
+  int _spread(List<int> numbers) {
+    if (numbers.isEmpty) return 0;
+    final sorted = List<int>.from(numbers)..sort();
+    return sorted.last - sorted.first;
   }
 }
