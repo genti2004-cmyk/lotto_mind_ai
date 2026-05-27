@@ -27,12 +27,26 @@ class GeneratorScreen extends StatefulWidget {
 class _GeneratorScreenState extends State<GeneratorScreen> {
   int _tabIndex = 0;
   final Set<int> _visitedTabs = <int>{0};
+  bool _showAnalysisDetails = false;
+  bool _showProDetails = false;
 
   void _goToTab(int index) {
     if (_tabIndex == index) return;
     setState(() {
       _tabIndex = index;
       _visitedTabs.add(index);
+    });
+  }
+
+  void _toggleAnalysisDetails() {
+    setState(() {
+      _showAnalysisDetails = !_showAnalysisDetails;
+    });
+  }
+
+  void _toggleProDetails() {
+    setState(() {
+      _showProDetails = !_showProDetails;
     });
   }
 
@@ -180,6 +194,8 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
             onGenerate: _generateAnalysis,
             onGenerateSignal: _generateSignalTip,
             onApplyBest: state.bestAnalyzedTip.length == 6 ? _applyBestTip : null,
+            showDetails: _showAnalysisDetails,
+            onToggleDetails: _toggleAnalysisDetails,
           ),
           currentTip: currentTip,
         );
@@ -189,6 +205,8 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
             state: state,
             onGenerate: _generateAnalysis,
             onApplyBest: state.bestAnalyzedTip.length == 6 ? _applyBestTip : null,
+            showDetails: _showProDetails,
+            onToggleDetails: _toggleProDetails,
           ),
           currentTip: currentTip,
         );
@@ -1174,23 +1192,20 @@ class _AiPanel extends StatelessWidget {
   final Future<void> Function() onGenerate;
   final Future<void> Function() onGenerateSignal;
   final Future<void> Function()? onApplyBest;
+  final bool showDetails;
+  final VoidCallback onToggleDetails;
 
   const _AiPanel({
     required this.state,
     required this.onGenerate,
     required this.onGenerateSignal,
     required this.onApplyBest,
+    required this.showDetails,
+    required this.onToggleDetails,
   });
 
   @override
   Widget build(BuildContext context) {
-    final ai = state.analysisAiSummary;
-    final bestTip = state.bestAnalyzedTip;
-    final signalNumbers = state.signalTipNumbers;
-    final signalScores = state.signalScores(limit: 6);
-    final lastSimulation = state.bestCurrentTipWindow?.summary;
-    final bestSimulation = state.bestAiTipWindow?.summary;
-
     return _PanelCard(
       title: 'Analyse-Tipp',
       subtitle: 'Für Nutzer, die Ziehungsverlauf, Häufigkeiten und Intervall-Hinweise in die Tipp-Erstellung einbeziehen möchten.',
@@ -1465,92 +1480,220 @@ class _AiPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          _SubCard(
-            title: '2. Signalmodell',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Der Signal-Tipp kombiniert Häufigkeit, Rückstand, Intervall und einfache Muster. Er zeigt auffällige Zahlen aus vergangenen Ziehungen und ist keine sichere Vorhersage.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.45,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _BallRow(title: 'Signal-Tipp', numbers: signalNumbers),
-                const SizedBox(height: 12),
-                _SignalReasonList(scores: signalScores),
-              ],
+          _DetailsToggleCard(
+            title: 'Details & Erklärung',
+            text: showDetails
+                ? 'Signalmodell, Modell-Hinweise und Rücktest-Details ausblenden.'
+                : 'Signalmodell, Modell-Hinweise und Rücktest-Details erst bei Bedarf laden.',
+            expanded: showDetails,
+            onPressed: onToggleDetails,
+          ),
+          if (showDetails) ...[
+            const SizedBox(height: 14),
+            _AiDetailsPanel(
+              state: state,
+              onApplyBest: onApplyBest,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+
+class _DetailsToggleCard extends StatelessWidget {
+  final String title;
+  final String text;
+  final bool expanded;
+  final VoidCallback onPressed;
+
+  const _DetailsToggleCard({
+    required this.title,
+    required this.text,
+    required this.expanded,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _SubCard(
+      title: title,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 14),
-          _SubCard(
-            title: '3. Modell-Hinweise',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _InlineInfo(label: 'Titel', value: ai.title),
-                const SizedBox(height: 6),
-                _InlineInfo(label: 'Sicherheit', value: ai.confidence),
-                const SizedBox(height: 12),
-                _ConfidenceBar(confidenceText: ai.confidence),
-                const SizedBox(height: 12),
-                _BallRow(title: 'Empfohlen', numbers: ai.recommendedNumbers),
-                const SizedBox(height: 12),
-                _BallRow(title: 'Eher meiden', numbers: ai.avoidNumbers),
-                const SizedBox(height: 12),
-                Text(
-                  ai.reasoning,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    height: 1.45,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: onPressed,
+            icon: Icon(expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded),
+            label: Text(expanded ? 'Details ausblenden' : 'Details anzeigen'),
           ),
-          const SizedBox(height: 14),
-          _SubCard(
-            title: '4. Tipp übernehmen',
-            child: bestTip.length != 6
-                ? const Text(
-              'Noch kein Pro-Tipp verfügbar.',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
+        ],
+      ),
+    );
+  }
+}
+
+class _AiDetailsPanel extends StatelessWidget {
+  final LottoAppState state;
+  final Future<void> Function()? onApplyBest;
+
+  const _AiDetailsPanel({
+    required this.state,
+    required this.onApplyBest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ai = state.analysisAiSummary;
+    final bestTip = state.bestAnalyzedTip;
+    final signalNumbers = state.signalTipNumbers;
+    final signalScores = state.signalScores(limit: 6);
+    final lastSimulation = state.bestCurrentTipWindow?.summary;
+    final bestSimulation = state.bestAiTipWindow?.summary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SubCard(
+          title: '2. Signalmodell',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Der Signal-Tipp kombiniert Häufigkeit, Rückstand, Intervall und einfache Muster. Er zeigt auffällige Zahlen aus vergangenen Ziehungen und ist keine sichere Vorhersage.',
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.45,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            )
-                : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _BallRow(title: 'Bester Tipp', numbers: bestTip),
-                if (bestSimulation != null) ...[
-                  const SizedBox(height: 12),
-                  _SimulationSummaryCard(
-                    title: 'Rücktest Pro',
-                    simulation: bestSimulation,
-                  ),
-                ],
-                const SizedBox(height: 12),
-                PrimaryButton(
-                  label: 'Analyse-Tipp übernehmen',
-                  icon: Icons.download_done_rounded,
-                  onPressed: onApplyBest,
+              const SizedBox(height: 12),
+              _BallRow(title: 'Signal-Tipp', numbers: signalNumbers),
+              const SizedBox(height: 12),
+              _SignalReasonList(scores: signalScores),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        _SubCard(
+          title: '3. Modell-Hinweise',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _InlineInfo(label: 'Titel', value: ai.title),
+              const SizedBox(height: 6),
+              _InlineInfo(label: 'Sicherheit', value: ai.confidence),
+              const SizedBox(height: 12),
+              _ConfidenceBar(confidenceText: ai.confidence),
+              const SizedBox(height: 12),
+              _BallRow(title: 'Empfohlen', numbers: ai.recommendedNumbers),
+              const SizedBox(height: 12),
+              _BallRow(title: 'Eher meiden', numbers: ai.avoidNumbers),
+              const SizedBox(height: 12),
+              Text(
+                ai.reasoning,
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.45,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
                 ),
-                if (lastSimulation != null) ...[
-                  const SizedBox(height: 12),
-                  _SimulationSummaryCard(
-                    title: 'Rücktest aktueller Tipp',
-                    simulation: lastSimulation,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        _SubCard(
+          title: '4. Tipp übernehmen',
+          child: bestTip.length != 6
+              ? const Text(
+                  'Noch kein Pro-Tipp verfügbar.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ],
-            ),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _BallRow(title: 'Bester Tipp', numbers: bestTip),
+                    if (bestSimulation != null) ...[
+                      const SizedBox(height: 12),
+                      _SimulationSummaryCard(
+                        title: 'Rücktest Pro',
+                        simulation: bestSimulation,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    PrimaryButton(
+                      label: 'Analyse-Tipp übernehmen',
+                      icon: Icons.download_done_rounded,
+                      onPressed: onApplyBest,
+                    ),
+                    if (lastSimulation != null) ...[
+                      const SizedBox(height: 12),
+                      _SimulationSummaryCard(
+                        title: 'Rücktest aktueller Tipp',
+                        simulation: lastSimulation,
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProDetailsPanel extends StatelessWidget {
+  final LottoAppState state;
+  final Future<void> Function()? onApplyBest;
+
+  const _ProDetailsPanel({
+    required this.state,
+    required this.onApplyBest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.bestAnalyzedTip.length != 6) {
+      return const _SubCard(
+        title: 'Pro-Kandidat',
+        child: Text(
+          'Noch kein Pro-Tipp verfügbar. Berechne zuerst einen Pro-Tipp.',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    return _SubCard(
+      title: 'Pro-Kandidat',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _BallRow(
+            title: 'Pro-Kandidat',
+            numbers: state.bestAnalyzedTip,
+          ),
+          const SizedBox(height: 12),
+          PrimaryButton(
+            label: 'Kandidaten übernehmen',
+            icon: Icons.download_done_rounded,
+            onPressed: onApplyBest,
           ),
         ],
       ),
@@ -1562,11 +1705,15 @@ class _JackpotPanel extends StatelessWidget {
   final LottoAppState state;
   final Future<void> Function() onGenerate;
   final Future<void> Function()? onApplyBest;
+  final bool showDetails;
+  final VoidCallback onToggleDetails;
 
   const _JackpotPanel({
     required this.state,
     required this.onGenerate,
     required this.onApplyBest,
+    required this.showDetails,
+    required this.onToggleDetails,
   });
 
   @override
@@ -1648,25 +1795,20 @@ class _JackpotPanel extends StatelessWidget {
               ),
             ],
           ),
-          if (state.bestAnalyzedTip.length == 6) ...[
+          const SizedBox(height: 14),
+          _DetailsToggleCard(
+            title: 'Pro-Details',
+            text: showDetails
+                ? 'Pro-Kandidat und weitere Details ausblenden.'
+                : 'Pro-Kandidat erst anzeigen, wenn du ihn wirklich brauchst.',
+            expanded: showDetails,
+            onPressed: onToggleDetails,
+          ),
+          if (showDetails) ...[
             const SizedBox(height: 14),
-            _SubCard(
-              title: 'Jackpot-Kandidat',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _BallRow(
-                    title: 'Pro-Kandidat',
-                    numbers: state.bestAnalyzedTip,
-                  ),
-                  const SizedBox(height: 12),
-                  PrimaryButton(
-                    label: 'Kandidaten übernehmen',
-                    icon: Icons.download_done_rounded,
-                    onPressed: onApplyBest,
-                  ),
-                ],
-              ),
+            _ProDetailsPanel(
+              state: state,
+              onApplyBest: onApplyBest,
             ),
           ],
         ],
