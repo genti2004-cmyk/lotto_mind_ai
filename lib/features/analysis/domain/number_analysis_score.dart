@@ -96,10 +96,6 @@ class NumberAnalysisScore {
       reasons.add('Muster-/Nachbarschaftssignal');
     }
 
-    if (hybridScore >= 0.60 && reasons.length >= 2) {
-      reasons.add('mehrere Signale wirken zusammen');
-    }
-
     if (reasons.isEmpty) {
       reasons.add('ausgewogener Hybrid-Score');
     }

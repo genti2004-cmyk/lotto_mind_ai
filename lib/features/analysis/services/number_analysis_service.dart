@@ -213,33 +213,12 @@ class NumberAnalysisService {
     required double intervalScore,
     required double patternScore,
   }) {
-    // v35: Das Hybrid-Signal soll ausgewogener sein.
-    // Häufigkeit und Rückstand bleiben wichtig, werden aber nicht so stark
-    // belohnt, dass ein einzelnes Extrem-Signal den kompletten Tipp dominiert.
-    final rawScore =
-        frequencyScore * 0.25 +
-        overdueScore * 0.20 +
-        intervalScore * 0.35 +
-        patternScore * 0.20;
-
-    final strongestSignal = [
-      frequencyScore,
-      overdueScore,
-      intervalScore,
-      patternScore,
-    ].reduce(math.max);
-    final weakestSignal = [
-      frequencyScore,
-      overdueScore,
-      intervalScore,
-      patternScore,
-    ].reduce(math.min);
-    final spread = strongestSignal - weakestSignal;
-
-    // Kleine Stabilitätsbremse: extrem einseitige Zahlen bekommen keinen
-    // massiven Bonus, ausgewogene Signale bleiben bevorzugt.
-    final balancePenalty = spread > 0.72 ? 0.06 : 0.0;
-    return (rawScore - balancePenalty).clamp(0.0, 1.0).toDouble();
+    return (
+      frequencyScore * 0.27 +
+      overdueScore * 0.23 +
+      intervalScore * 0.34 +
+      patternScore * 0.16
+    ).clamp(0.0, 1.0).toDouble();
   }
 
   double? _averageInterval(List<int> hitIndexes) {
@@ -277,19 +256,15 @@ class NumberAnalysisService {
 
     for (final score in sortedScores) {
       if (selected.length >= limit) break;
-      if (!_canAddBalanced(score, selected, decadeCounts)) continue;
-      selected.add(score);
       final decade = (score.number - 1) ~/ 10;
-      decadeCounts[decade] = (decadeCounts[decade] ?? 0) + 1;
-    }
+      final currentDecadeCount = decadeCounts[decade] ?? 0;
+      final hasTooManyNeighbors = selected.where(
+        (item) => (item.number - score.number).abs() <= 1,
+      ).length >= 2;
 
-    if (selected.length < limit) {
-      for (final score in sortedScores) {
-        if (selected.length >= limit) break;
-        if (selected.any((item) => item.number == score.number)) continue;
-        if (!_passesSoftBalance(score, selected)) continue;
-        selected.add(score);
-      }
+      if (currentDecadeCount >= 2 || hasTooManyNeighbors) continue;
+      selected.add(score);
+      decadeCounts[decade] = currentDecadeCount + 1;
     }
 
     if (selected.length < limit) {
@@ -302,45 +277,5 @@ class NumberAnalysisService {
 
     selected.sort((a, b) => a.number.compareTo(b.number));
     return selected.take(limit).toList();
-  }
-
-  bool _canAddBalanced(
-    NumberAnalysisScore score,
-    List<NumberAnalysisScore> selected,
-    Map<int, int> decadeCounts,
-  ) {
-    final decade = (score.number - 1) ~/ 10;
-    if ((decadeCounts[decade] ?? 0) >= 2) return false;
-
-    final nearNeighbors = selected.where(
-      (item) => (item.number - score.number).abs() <= 1,
-    ).length;
-    if (nearNeighbors >= 1) return false;
-
-    return _passesSoftBalance(score, selected);
-  }
-
-  bool _passesSoftBalance(
-    NumberAnalysisScore score,
-    List<NumberAnalysisScore> selected,
-  ) {
-    final nextNumbers = [...selected.map((item) => item.number), score.number];
-    final oddCount = nextNumbers.where((number) => number.isOdd).length;
-    final lowCount = nextNumbers.where((number) => number <= 24).length;
-    final freshCount = [
-      ...selected.where((item) => item.lastSeenDrawsAgo == 0),
-      if (score.lastSeenDrawsAgo == 0) score,
-    ].length;
-
-    // Bei sechs Zahlen soll keine Seite komplett dominieren. Bis zur vierten
-    // Auswahl darf die Regel weich bleiben, danach wird stärker balanciert.
-    if (nextNumbers.length >= 5) {
-      if (oddCount > 4 || oddCount < nextNumbers.length - 4) return false;
-      if (lowCount > 4 || lowCount < nextNumbers.length - 4) return false;
-    }
-
-    // Wiederholer aus der letzten Ziehung sind erlaubt, aber nicht als Cluster.
-    if (freshCount > 2) return false;
-    return true;
   }
 }

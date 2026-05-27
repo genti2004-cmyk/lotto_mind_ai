@@ -24,7 +24,7 @@ class AboutReleaseScreen extends StatelessWidget {
           children: [
             const SectionTitle(
               title: 'Lotto Mind AI – Release',
-              subtitle: 'v35 Strategiegewichtung / ausgewogener Signal-Tipp, App-Store-Readiness und finale Freigabe-Checks',
+              subtitle: 'v33 Onboarding / Erster Start, App-Store-Readiness und finale Freigabe-Checks',
             ),
             const SizedBox(height: 20),
             AppCard(
@@ -38,7 +38,7 @@ class AboutReleaseScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   const _InfoRow(label: 'App-Name', value: 'Lotto Mind AI'),
                   const SizedBox(height: 10),
-                  const _InfoRow(label: 'Release-Stufe', value: 'v35 Strategiegewichtung / Tippqualität'),
+                  const _InfoRow(label: 'Release-Stufe', value: 'v33 Onboarding / Erster Start'),
                   const SizedBox(height: 10),
                   _InfoRow(label: 'Edition', value: state.edition.label),
                   const SizedBox(height: 10),
@@ -48,35 +48,10 @@ class AboutReleaseScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   _InfoRow(label: 'Regelprofile', value: '${state.ruleProfiles.length}'),
                   const SizedBox(height: 10),
-                  const _InfoRow(label: 'Stabilitätsstand', value: 'v30 Release-Kandidat + v31 App-Store-Readiness + v32 Hinweise + v33 Onboarding + v34 Start-Assistent + v35 Strategiegewichtung'),
+                  const _InfoRow(label: 'Stabilitätsstand', value: 'v30 Release-Kandidat + v31 App-Store-Readiness + v32 Hinweise + v33 Onboarding'),
                 ],
               ),
             ),
-
-            const SizedBox(height: 20),
-            const AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _BlockHeader(
-                    title: 'Was wurde in v35 verbessert?',
-                    subtitle: 'Diese Punkte erklären die Änderungen am Signal-Tipp direkt in der App.',
-                  ),
-                  SizedBox(height: 14),
-                  _ReleaseLine('Ausgewogenere Gewichtung: Häufigkeit, Rückstand, Intervall und Muster werden gleichmäßiger kombiniert.'),
-                  _ReleaseLine('Häufigkeit dominiert nicht mehr allein: sehr oft gezogene Zahlen werden nicht automatisch bevorzugt.'),
-                  _ReleaseLine('Rückstand wird vorsichtiger bewertet: lange nicht gezogene Zahlen gelten als auffällig, aber nicht automatisch als fällig.'),
-                  _ReleaseLine('Intervall-Signal wurde gestärkt: durchschnittlicher Abstand und aktueller Abstand einer Zahl werden besser verglichen.'),
-                  _ReleaseLine('Bereichs-Balance: Signal-Tipps sollen nicht zu stark in einem Zahlenbereich clustern.'),
-                  _ReleaseLine('Gerade/ungerade Balance: die Auswahl achtet stärker auf eine spielbare Mischung.'),
-                  _ReleaseLine('Niedrige/hohe Zahlen: Tipps werden gleichmäßiger über das Zahlenfeld verteilt.'),
-                  _ReleaseLine('Wiederholer-Kontrolle: Zahlen aus der letzten Ziehung werden begrenzt, aber nicht komplett ausgeschlossen.'),
-                  _ReleaseLine('Erklärung verbessert: Beim Signal-Tipp wird sichtbarer, welche Signale pro Zahl zusammenwirken.'),
-                  _ReleaseLine('Wichtig: Die App zeigt historische Auffälligkeiten, keine sichere Vorhersage und keine Gewinnzusage.'),
-                ],
-              ),
-            ),
-
             const SizedBox(height: 20),
             const AppCard(
               child: Column(
@@ -95,8 +70,6 @@ class AboutReleaseScreen extends StatelessWidget {
                   _ReleaseLine('Vor Store-Upload: Versionsnummer, Datenschutz und AAB final prüfen'),
                   _ReleaseLine('Store-Texte ohne Gewinnversprechen oder sichere Vorhersage formulieren'),
                   _ReleaseLine('Hinweise zu Mindestalter, verantwortungsvollem Spielen und Anbieter-Abgabe sichtbar halten'),
-                  _ReleaseLine('Start-Assistent auf der Startseite prüfen'),
-                  _ReleaseLine('Signal-Tipp auf ausgewogene Bereiche, gerade/ungerade und Wiederholer prüfen'),
                   _ReleaseLine('Erster-Start-Anleitung für neue Nutzer öffnen und prüfen'),
                   _ReleaseLine('Normal / Pro / Premium als vorbereitet kennzeichnen, solange keine echte Paywall aktiv ist'),
                 ],
