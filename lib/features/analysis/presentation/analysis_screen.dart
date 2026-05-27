@@ -44,6 +44,11 @@ class AnalysisScreen extends StatelessWidget {
       AnalysisSignal.hybrid,
       limit: 6,
     );
+    final rangeScores = signalService.analyzeNumbers(state.analysisDrawResults)
+      ..sort((a, b) {
+        final byScore = b.rangePatternScore.compareTo(a.rangePatternScore);
+        return byScore != 0 ? byScore : a.number.compareTo(b.number);
+      });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -88,6 +93,7 @@ class AnalysisScreen extends StatelessWidget {
               overdueScores: overdueScores,
               intervalScores: intervalScores,
               hybridScores: hybridScores,
+              rangeScores: rangeScores.take(6).toList(),
             ),
             const SizedBox(height: 14),
             _AiInsightCard(
@@ -135,12 +141,14 @@ class _SignalModelCard extends StatelessWidget {
     required this.overdueScores,
     required this.intervalScores,
     required this.hybridScores,
+    required this.rangeScores,
   });
 
   final List<NumberAnalysisScore> frequencyScores;
   final List<NumberAnalysisScore> overdueScores;
   final List<NumberAnalysisScore> intervalScores;
   final List<NumberAnalysisScore> hybridScores;
+  final List<NumberAnalysisScore> rangeScores;
 
   bool get _hasScores => hybridScores.isNotEmpty &&
       hybridScores.any((score) => score.hybridScore > 0 || score.hitCount > 0);
@@ -204,9 +212,11 @@ class _SignalModelCard extends StatelessWidget {
               signal: AnalysisSignal.interval,
             ),
             const SizedBox(height: 12),
+            _RangePatternRow(scores: rangeScores),
+            const SizedBox(height: 12),
             _SignalTopRow(
               title: 'Hybrid',
-              subtitle: 'kombiniert Häufigkeit, Rückstand, Intervall und Muster',
+              subtitle: 'kombiniert Häufigkeit, Rückstand, Intervall, Muster und Bereichsverteilung',
               icon: Icons.auto_awesome_rounded,
               scores: hybridScores,
               signal: AnalysisSignal.hybrid,
@@ -342,6 +352,142 @@ class _SignalTopRow extends StatelessWidget {
   }
 }
 
+
+class _RangePatternRow extends StatelessWidget {
+  const _RangePatternRow({required this.scores});
+
+  final List<NumberAnalysisScore> scores;
+
+  @override
+  Widget build(BuildContext context) {
+    final topScores = scores.take(6).toList();
+    final top = topScores.isEmpty ? null : topScores.first;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.infoSoft,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.grid_view_rounded, size: 18, color: AppColors.primaryDark),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bereichsmuster',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'bewertet die Zahlenblöcke 1–10, 11–20, 21–30, 31–40 und 41–49',
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (top != null) ...[
+                const SizedBox(width: 8),
+                _SignalScoreBadge(value: top.rangePatternScore),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (topScores.isEmpty)
+            const Text(
+              'Keine Daten im aktuellen Analysefenster.',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: topScores
+                  .map((score) => _RangeNumberPill(score: score))
+                  .toList(),
+            ),
+          if (top != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Top: ${top.number} · ${top.rangePatternLabel} · Bereich ${((top.rangePatternScore * 100).round()).clamp(0, 100)}%',
+              style: const TextStyle(
+                fontSize: 11,
+                height: 1.35,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RangeNumberPill extends StatelessWidget {
+  const _RangeNumberPill({required this.score});
+
+  final NumberAnalysisScore score;
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = (score.rangePatternScore * 100).round().clamp(0, 100);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          NumberBall(number: score.number, size: 30),
+          const SizedBox(width: 7),
+          Text(
+            '$percent%',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SignalNumberPill extends StatelessWidget {
   const _SignalNumberPill({
     required this.score,
@@ -424,6 +570,11 @@ class _SignalLegend extends StatelessWidget {
         _SignalChip(label: 'Rückstand'),
         _SignalChip(label: 'Intervall'),
         _SignalChip(label: 'Muster'),
+        _SignalChip(label: 'Bereich 1–10'),
+        _SignalChip(label: '11–20'),
+        _SignalChip(label: '21–30'),
+        _SignalChip(label: '31–40'),
+        _SignalChip(label: '41–49'),
         _SignalChip(label: 'Hybrid'),
       ],
     );

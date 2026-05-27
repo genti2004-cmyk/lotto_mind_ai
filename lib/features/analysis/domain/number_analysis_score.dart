@@ -61,10 +61,11 @@ class NumberAnalysisScore {
   String get hybridPercentLabel => '${(hybridScore * 100).round()}%';
 
   String get rangePatternLabel {
-    if (number <= 10) {
-      return 'kleine Zahlengruppe 1–10';
-    }
-    return 'große Zahlengruppe 11–49';
+    if (number <= 10) return 'Zahlenblock 1–10';
+    if (number <= 20) return 'Zahlenblock 11–20';
+    if (number <= 30) return 'Zahlenblock 21–30';
+    if (number <= 40) return 'Zahlenblock 31–40';
+    return 'Zahlenblock 41–49';
   }
 
   String get intervalLabel {

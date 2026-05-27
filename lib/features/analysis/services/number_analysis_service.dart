@@ -215,47 +215,61 @@ class NumberAnalysisService {
   double _rangePatternScore(int number, List<DrawResult> draws) {
     if (draws.length < 6) return 0.45;
 
-    // v38: Bereichsmuster 1–10 vs. 11–49.
-    // Die Zahl 10 wird bewusst zur kleinen Gruppe gezählt, damit keine Zahl
-    // aus der Bereichsanalyse herausfällt. Das Modell gleicht historische
-    // Bereichsmuster nur weich aus und macht daraus keine harte Vorhersage.
-    final isSmallNumber = number <= 10;
+    // v39: Bereichsmuster nicht nur 1–10 vs. 11–49, sondern in Blöcken:
+    // 1–10, 11–20, 21–30, 31–40 und 41–49. Das Modell prüft weich,
+    // welche Blöcke im jüngeren Fenster gegenüber dem längeren Verlauf
+    // unter- oder überrepräsentiert waren. Daraus entsteht kein hartes
+    // Zukunftssignal, sondern ein zusätzlicher Balance-/Musterwert.
+    final range = _rangeBoundsForNumber(number);
+    final rangeSize = range.$2 - range.$1 + 1;
     final recentWindow = math.min(10, draws.length);
     final baselineWindow = math.min(52, draws.length);
 
-    final recentSmallAverage = _averageSmallNumberCount(
+    final recentAverage = _averageRangeCount(
       draws.take(recentWindow),
+      min: range.$1,
+      max: range.$2,
     );
-    final baselineSmallAverage = _averageSmallNumberCount(
+    final baselineAverage = _averageRangeCount(
       draws.take(baselineWindow),
+      min: range.$1,
+      max: range.$2,
     );
 
-    // Erwartungswert bei 6 aus 49 für Zahlen 1–10: ungefähr 1,22.
-    final naturalSmallAverage = _numbersPerDraw * (10 / _maxNumber);
-    final expectedSmallAverage = baselineSmallAverage > 0
-        ? (baselineSmallAverage * 0.70 + naturalSmallAverage * 0.30)
-        : naturalSmallAverage;
+    final naturalAverage = _numbersPerDraw * (rangeSize / _maxNumber);
+    final expectedAverage = baselineAverage > 0
+        ? (baselineAverage * 0.70 + naturalAverage * 0.30)
+        : naturalAverage;
 
-    final diff = expectedSmallAverage - recentSmallAverage;
+    // Positiv: Bereich war zuletzt seltener als erwartet.
+    // Negativ: Bereich war zuletzt häufiger als erwartet.
+    final diff = expectedAverage - recentAverage;
 
-    if (isSmallNumber) {
-      // Kleine Zahlen bekommen ein weiches Plus, wenn sie im jüngeren Fenster
-      // unterrepräsentiert waren. Bei Übergewicht wird der Score gedämpft.
-      return (0.50 + diff * 0.20).clamp(0.0, 1.0).toDouble();
-    }
-
-    // Große Zahlen sind der Gegenpol. Wenn kleine Zahlen zuletzt deutlich
-    // überrepräsentiert waren, bekommen größere Zahlen ein weiches Plus.
-    return (0.50 - diff * 0.07).clamp(0.0, 1.0).toDouble();
+    // Die Blockgröße 41–49 ist etwas kleiner. Deshalb wird der Ausschlag
+    // leicht relativ zur natürlichen Erwartung normalisiert.
+    final normalizedDiff = naturalAverage <= 0 ? 0.0 : diff / naturalAverage;
+    return (0.50 + normalizedDiff * 0.22).clamp(0.0, 1.0).toDouble();
   }
 
-  double _averageSmallNumberCount(Iterable<DrawResult> draws) {
+  (int, int) _rangeBoundsForNumber(int number) {
+    if (number <= 10) return (1, 10);
+    if (number <= 20) return (11, 20);
+    if (number <= 30) return (21, 30);
+    if (number <= 40) return (31, 40);
+    return (41, 49);
+  }
+
+  double _averageRangeCount(
+    Iterable<DrawResult> draws, {
+    required int min,
+    required int max,
+  }) {
     final drawList = draws.toList();
     if (drawList.isEmpty) return 0.0;
     final total = drawList
         .map(
           (draw) => draw.numbers
-              .where((number) => number >= _minNumber && number <= 10)
+              .where((number) => number >= min && number <= max)
               .toSet()
               .length,
         )
