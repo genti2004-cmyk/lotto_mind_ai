@@ -26,10 +26,14 @@ class GeneratorScreen extends StatefulWidget {
 
 class _GeneratorScreenState extends State<GeneratorScreen> {
   int _tabIndex = 0;
+  final Set<int> _visitedTabs = <int>{0};
 
   void _goToTab(int index) {
     if (_tabIndex == index) return;
-    setState(() => _tabIndex = index);
+    setState(() {
+      _tabIndex = index;
+      _visitedTabs.add(index);
+    });
   }
 
   Future<void> _showMessage(String message) async {
@@ -264,14 +268,11 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
                           state.lastGeneratedTip!.isNotEmpty,
                     ),
                     const SizedBox(height: 16),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 90),
-                      switchInCurve: Curves.easeOut,
-                      switchOutCurve: Curves.easeIn,
-                      child: KeyedSubtree(
-                        key: ValueKey<int>(_tabIndex),
-                        child: _buildTabContent(state),
-                      ),
+                    RepaintBoundary(
+                      key: ValueKey<int>(_tabIndex),
+                      child: _visitedTabs.contains(_tabIndex)
+                          ? _buildTabContent(state)
+                          : const SizedBox.shrink(),
                     ),
                     const SizedBox(height: 20),
                     _GeneratorPdfExportButton(
