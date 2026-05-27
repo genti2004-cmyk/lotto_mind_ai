@@ -285,6 +285,8 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
                       hasCurrentTip: state.lastGeneratedTip != null &&
                           state.lastGeneratedTip!.isNotEmpty,
                     ),
+                    const SizedBox(height: 12),
+                    _StrategyChoiceGuide(index: _tabIndex),
                     const SizedBox(height: 16),
                     RepaintBoundary(
                       key: ValueKey<int>(_tabIndex),
@@ -704,6 +706,143 @@ class _GeneratorFlowGuide extends StatelessWidget {
   }
 }
 
+
+class _StrategyChoiceGuide extends StatelessWidget {
+  final int index;
+
+  const _StrategyChoiceGuide({required this.index});
+
+  String get _title {
+    switch (index) {
+      case 0:
+        return 'Strategie: Basis';
+      case 1:
+        return 'Strategie: Analyse / Signal';
+      case 2:
+        return 'Strategie: Pro';
+      case 3:
+        return 'Strategie: System';
+      default:
+        return 'Strategie wählen';
+    }
+  }
+
+  IconData get _icon {
+    switch (index) {
+      case 0:
+        return Icons.casino_rounded;
+      case 1:
+        return Icons.psychology_alt_rounded;
+      case 2:
+        return Icons.local_fire_department_rounded;
+      case 3:
+        return Icons.grid_view_rounded;
+      default:
+        return Icons.route_rounded;
+    }
+  }
+
+  String get _description {
+    switch (index) {
+      case 0:
+        return 'Ein schneller, ausgewogener Einstieg ohne Analysegewichtung. Gut, wenn Nutzer direkt einen einfachen Tipp speichern möchten.';
+      case 1:
+        return 'Analyse nutzt Ziehungsverlauf, Häufigkeit, Rückstand, Intervall, Bereichs- und Abstandsmuster. Signal ist der transparenteste Analyse-Tipp.';
+      case 2:
+        return 'Pro ist der erweiterte Bereich mit Simulationen, Kandidaten und mehr Details. Gedacht für Nutzer, die Strategien intensiver vergleichen möchten.';
+      case 3:
+        return 'System erzeugt mehrere Reihen beziehungsweise Systemscheine. Geeignet für strukturierte Varianten statt nur einer einzelnen Reihe.';
+      default:
+        return 'Wähle eine Strategie, erzeuge einen Tipp und speichere ihn anschließend in Meine Tipps.';
+    }
+  }
+
+  String get _bestFor {
+    switch (index) {
+      case 0:
+        return 'Schneller Start';
+      case 1:
+        return 'Nachvollziehbare Musteranalyse';
+      case 2:
+        return 'Erweiterte Auswertung';
+      case 3:
+        return 'Mehrere Reihen';
+      default:
+        return 'Tipp-Erstellung';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.infoSoft,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(_icon, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _description,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Text(
+                    'Am besten für: $_bestFor',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FlowStep extends StatelessWidget {
   final String number;
   final String title;
@@ -1010,7 +1149,7 @@ class _NormalPanel extends StatelessWidget {
 
     return _PanelCard(
       title: 'Basis-Tipp',
-      subtitle: 'Einfacher Zufallstipp für Nutzer, die schnell einen spielbereiten Tipp speichern möchten.',
+      subtitle: 'Basis ist der einfache Einstieg: schnell erzeugen, direkt speichern, ohne Expertenwerte.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1208,7 +1347,7 @@ class _AiPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return _PanelCard(
       title: 'Analyse-Tipp',
-      subtitle: 'Für Nutzer, die Ziehungsverlauf, Häufigkeiten und Intervall-Hinweise in die Tipp-Erstellung einbeziehen möchten.',
+      subtitle: 'Analyse und Signal nutzen historische Muster wie Häufigkeit, Rückstand, Intervall, Bereiche und Abstände.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1720,7 +1859,7 @@ class _JackpotPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return _PanelCard(
       title: 'Pro-Strategie',
-      subtitle: 'Erweiterter Modus für chancenorientierte Varianten, Simulationen und spätere Pro/Premium-Funktionen.',
+      subtitle: 'Pro ist der Expertenbereich für Kandidaten, Simulationen und detailliertere Strategiearbeit.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1826,7 +1965,7 @@ class _SystemEntryPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return _PanelCard(
       title: 'Systemspiele',
-      subtitle: 'Systemscheine und Intervall-Systeme laufen in einem eigenen Bereich für fortgeschrittene Nutzer.',
+      subtitle: 'System ist für mehrere Reihen und strukturierte Spielvarianten gedacht.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
