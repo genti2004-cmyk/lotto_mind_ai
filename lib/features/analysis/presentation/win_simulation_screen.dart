@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/number_ball.dart';
 import '../../generator/provider/lotto_app_state.dart';
+import 'package:lotto_mind_ai/core/utils/format_utils.dart';
 
 class WinSimulationScreen extends StatelessWidget {
   const WinSimulationScreen({super.key});
@@ -76,10 +77,7 @@ class _IntroCard extends StatelessWidget {
     required this.bestAiWindow,
   });
 
-  String _formatEuro(double value) {
-    final fixed = value.toStringAsFixed(2).replaceAll('.', ',');
-    return '$fixed €';
-  }
+  String _formatEuro(double value) => AppFormatUtils.euro(value);
 
 
   @override
@@ -253,22 +251,11 @@ class _RangeCard extends StatelessWidget {
 
   const _RangeCard({required this.range});
 
-  String _formatEuro(double value) {
-    final fixed = value.toStringAsFixed(2).replaceAll('.', ',');
-    return '$fixed €';
-  }
+  String _formatEuro(double value) => AppFormatUtils.euro(value);
 
-  String _formatSignedEuro(double value) {
-    final prefix = value >= 0 ? '+' : '-';
-    final fixed = value.abs().toStringAsFixed(2).replaceAll('.', ',');
-    return '$prefix$fixed €';
-  }
+  String _formatSignedEuro(double value) => AppFormatUtils.signedEuro(value);
 
-  String _formatPercent(double value) {
-    final prefix = value >= 0 ? '+' : '-';
-    final fixed = value.abs().toStringAsFixed(1).replaceAll('.', ',');
-    return '$prefix$fixed %';
-  }
+  String _formatPercent(double value) => AppFormatUtils.signedPercent(value);
 
   @override
   Widget build(BuildContext context) {

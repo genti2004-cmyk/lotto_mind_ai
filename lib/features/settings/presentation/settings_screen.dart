@@ -14,6 +14,7 @@ import 'legal_notice_screen.dart';
 import '../../onboarding/presentation/onboarding_screen.dart';
 import 'rule_profiles_screen.dart';
 import 'rules_editor_screen.dart';
+import 'package:lotto_mind_ai/core/utils/format_utils.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -476,8 +477,4 @@ class _InfoLine extends StatelessWidget {
   }
 }
 
-String _formatDate(DateTime value) {
-  final day = value.day.toString().padLeft(2, '0');
-  final month = value.month.toString().padLeft(2, '0');
-  return '$day.$month.${value.year}';
-}
+String _formatDate(DateTime value) => AppFormatUtils.date(value);

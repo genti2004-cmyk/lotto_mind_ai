@@ -27,6 +27,8 @@ import '../../tracking/services/tracking_service.dart';
 import '../../analysis/domain/analysis_signal.dart';
 import '../../analysis/domain/number_analysis_score.dart';
 import '../../analysis/services/number_analysis_service.dart';
+import 'package:lotto_mind_ai/core/storage/app_storage_keys.dart';
+import 'package:lotto_mind_ai/core/utils/format_utils.dart';
 
 enum DrawMode {
   combined,
@@ -344,8 +346,8 @@ class LottoAppState extends ChangeNotifier {
   final double _stakePerTip = 1.20;   // ✅ HIER rein
   double get stakePerTip => _stakePerTip;
 
-  static const String _boxName = 'lotto_app_box';
-  static const String _drawHistoryBoxName = 'lotto_draw_history_box';
+  static const String _boxName = AppStorageBoxes.appState;
+  static const String _drawHistoryBoxName = AppStorageBoxes.drawHistory;
   static const String _savedTipsKey = 'saved_tips';
   static const String _lastGeneratedTipKey = 'last_generated_tip';
   static const String _lastGeneratedSuperNumberKey = 'last_generated_super_number';
@@ -3424,11 +3426,7 @@ bool _sameCalendarDate(DateTime a, DateTime b) {
     return simulateTip(bestTip);
   }
 
-String _formatDate(DateTime value) {
-    final day = value.day.toString().padLeft(2, '0');
-    final month = value.month.toString().padLeft(2, '0');
-    return '$day.$month.${value.year}';
-  }
+String _formatDate(DateTime value) => AppFormatUtils.date(value);
 
   String? _normalizeDigitText(String? value) {
     if (value == null) return null;

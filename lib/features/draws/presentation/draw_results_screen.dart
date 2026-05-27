@@ -9,6 +9,7 @@ import '../../generator/provider/lotto_app_state.dart';
 import '../domain/draw_result.dart';
 import '../domain/draw_type.dart';
 import '../domain/tip_check_result.dart';
+import 'package:lotto_mind_ai/core/utils/format_utils.dart';
 
 class DrawResultsScreen extends StatefulWidget {
   const DrawResultsScreen({super.key});
@@ -994,16 +995,8 @@ class _EmptyText extends StatelessWidget {
   }
 }
 
-String _formatDate(DateTime value) {
-  final day = value.day.toString().padLeft(2, '0');
-  final month = value.month.toString().padLeft(2, '0');
-  return '$day.$month.${value.year}';
-}
-String _formatDateShort(DateTime value) {
-  final day = value.day.toString().padLeft(2, '0');
-  final month = value.month.toString().padLeft(2, '0');
-  return '$day.$month.';
-}
+String _formatDate(DateTime value) => AppFormatUtils.date(value);
+String _formatDateShort(DateTime value) => AppFormatUtils.dateShort(value);
 
 String _drawTypeLabel(DateTime date) {
   return DrawTypeX.fromDate(date).label;

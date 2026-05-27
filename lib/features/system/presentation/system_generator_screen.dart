@@ -12,6 +12,8 @@ import 'package:lotto_mind_ai/features/system/domain/saved_system_play.dart';
 import 'package:lotto_mind_ai/features/system/services/system_ticket_evaluation_service.dart';
 import 'package:lotto_mind_ai/features/system/services/system_ai_number_service.dart';
 import 'package:lotto_mind_ai/features/system/services/vew_system_service.dart';
+import 'package:lotto_mind_ai/core/storage/app_storage_keys.dart';
+import 'package:lotto_mind_ai/core/utils/format_utils.dart';
 
 class SystemGeneratorScreen extends StatefulWidget {
   const SystemGeneratorScreen({super.key});
@@ -23,7 +25,7 @@ class SystemGeneratorScreen extends StatefulWidget {
 class _SystemGeneratorScreenState extends State<SystemGeneratorScreen>
     with SingleTickerProviderStateMixin {
   static const double _pricePerRow = 1.20;
-  static const String _boxName = 'system_play_tickets';
+  static const String _boxName = AppStorageBoxes.systemPlayTickets;
   static const _accent = Color(0xFF1B4FD6);
 
   final _service = const SystemTicketEvaluationService();
@@ -301,13 +303,9 @@ class _SystemGeneratorScreenState extends State<SystemGeneratorScreen>
     );
   }
 
-  String _formatDate(DateTime date) {
-    final d = date.day.toString().padLeft(2, '0');
-    final m = date.month.toString().padLeft(2, '0');
-    return '$d.$m.${date.year}';
-  }
+  String _formatDate(DateTime date) => AppFormatUtils.date(date);
 
-  String _euro(double value) => '${value.toStringAsFixed(2).replaceAll('.', ',')} €';
+  String _euro(double value) => AppFormatUtils.euro(value);
 
   @override
   Widget build(BuildContext context) {

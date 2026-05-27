@@ -1,5 +1,7 @@
 import 'package:hive_ce_flutter/hive_flutter.dart';
 
+import 'package:lotto_mind_ai/core/storage/app_storage_keys.dart';
+
 import '../../draws/domain/draw_result.dart';
 import '../../winnings/domain/lotto_win_value_model.dart';
 import '../domain/tracked_tip.dart';
@@ -41,7 +43,7 @@ class TrackingStrategySummary {
 }
 
 class TrackingService {
-  static const String boxName = 'tracking_pro_entries';
+  static const String boxName = AppStorageBoxes.trackingProEntries;
 
   Box<dynamic>? _box;
 

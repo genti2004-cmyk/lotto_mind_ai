@@ -13,6 +13,7 @@ import 'westlotto_submission_screen.dart';
 import 'package:lotto_mind_ai/features/draws/domain/draw_result.dart';
 import 'package:lotto_mind_ai/features/draws/domain/draw_type.dart';
 import 'package:lotto_mind_ai/features/generator/domain/lotto_tip.dart';
+import 'package:lotto_mind_ai/core/utils/format_utils.dart';
 
 class MyTipsScreen extends StatefulWidget {
   const MyTipsScreen({super.key});
@@ -1684,16 +1685,6 @@ String _sourceLabel(String raw) {
   }
 }
 
-String _formatDateTime(DateTime value) {
-  final day = value.day.toString().padLeft(2, '0');
-  final month = value.month.toString().padLeft(2, '0');
-  final hour = value.hour.toString().padLeft(2, '0');
-  final minute = value.minute.toString().padLeft(2, '0');
-  return '$day.$month.${value.year} • $hour:$minute';
-}
+String _formatDateTime(DateTime value) => AppFormatUtils.dateTime(value);
 
-String _formatDate(DateTime value) {
-  final day = value.day.toString().padLeft(2, '0');
-  final month = value.month.toString().padLeft(2, '0');
-  return '$day.$month.${value.year}';
-}
+String _formatDate(DateTime value) => AppFormatUtils.date(value);

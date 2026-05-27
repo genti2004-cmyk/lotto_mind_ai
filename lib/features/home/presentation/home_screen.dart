@@ -8,6 +8,7 @@ import '../../draws/presentation/draw_results_screen.dart';
 import '../../generator/presentation/generator_screen.dart';
 import '../../generator/provider/lotto_app_state.dart';
 import '../../tips/presentation/my_tips_screen.dart';
+import 'package:lotto_mind_ai/core/utils/format_utils.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -715,8 +716,4 @@ class _InfoLine extends StatelessWidget {
   }
 }
 
-String _formatDate(DateTime date) {
-  final day = date.day.toString().padLeft(2, '0');
-  final month = date.month.toString().padLeft(2, '0');
-  return '$day.$month.${date.year}';
-}
+String _formatDate(DateTime date) => AppFormatUtils.date(date);
