@@ -24,6 +24,7 @@ class NumberAnalysisService {
           overdueScore: 0,
           intervalScore: 0,
           patternScore: 0,
+          rangePatternScore: 0,
           hybridScore: 0,
           lastSeenDrawsAgo: null,
           hitCount: 0,
@@ -78,11 +79,13 @@ class NumberAnalysisService {
         baselineInterval: baselineInterval,
       );
       final patternScore = _patternScore(number, orderedDraws);
+      final rangePatternScore = _rangePatternScore(number, orderedDraws);
       final hybridScore = _hybridScore(
         frequencyScore: frequencyScore,
         overdueScore: overdueScore,
         intervalScore: intervalScore,
         patternScore: patternScore,
+        rangePatternScore: rangePatternScore,
       );
 
       scores.add(
@@ -92,6 +95,7 @@ class NumberAnalysisService {
           overdueScore: overdueScore,
           intervalScore: intervalScore,
           patternScore: patternScore,
+          rangePatternScore: rangePatternScore,
           hybridScore: hybridScore,
           lastSeenDrawsAgo: lastSeen,
           hitCount: hitCount,
@@ -207,32 +211,88 @@ class NumberAnalysisService {
         .toDouble();
   }
 
+
+  double _rangePatternScore(int number, List<DrawResult> draws) {
+    if (draws.length < 6) return 0.45;
+
+    // v38: Bereichsmuster 1–10 vs. 11–49.
+    // Die Zahl 10 wird bewusst zur kleinen Gruppe gezählt, damit keine Zahl
+    // aus der Bereichsanalyse herausfällt. Das Modell gleicht historische
+    // Bereichsmuster nur weich aus und macht daraus keine harte Vorhersage.
+    final isSmallNumber = number <= 10;
+    final recentWindow = math.min(10, draws.length);
+    final baselineWindow = math.min(52, draws.length);
+
+    final recentSmallAverage = _averageSmallNumberCount(
+      draws.take(recentWindow),
+    );
+    final baselineSmallAverage = _averageSmallNumberCount(
+      draws.take(baselineWindow),
+    );
+
+    // Erwartungswert bei 6 aus 49 für Zahlen 1–10: ungefähr 1,22.
+    final naturalSmallAverage = _numbersPerDraw * (10 / _maxNumber);
+    final expectedSmallAverage = baselineSmallAverage > 0
+        ? (baselineSmallAverage * 0.70 + naturalSmallAverage * 0.30)
+        : naturalSmallAverage;
+
+    final diff = expectedSmallAverage - recentSmallAverage;
+
+    if (isSmallNumber) {
+      // Kleine Zahlen bekommen ein weiches Plus, wenn sie im jüngeren Fenster
+      // unterrepräsentiert waren. Bei Übergewicht wird der Score gedämpft.
+      return (0.50 + diff * 0.20).clamp(0.0, 1.0).toDouble();
+    }
+
+    // Große Zahlen sind der Gegenpol. Wenn kleine Zahlen zuletzt deutlich
+    // überrepräsentiert waren, bekommen größere Zahlen ein weiches Plus.
+    return (0.50 - diff * 0.07).clamp(0.0, 1.0).toDouble();
+  }
+
+  double _averageSmallNumberCount(Iterable<DrawResult> draws) {
+    final drawList = draws.toList();
+    if (drawList.isEmpty) return 0.0;
+    final total = drawList
+        .map(
+          (draw) => draw.numbers
+              .where((number) => number >= _minNumber && number <= 10)
+              .toSet()
+              .length,
+        )
+        .fold<int>(0, (sum, value) => sum + value);
+    return total / drawList.length;
+  }
+
   double _hybridScore({
     required double frequencyScore,
     required double overdueScore,
     required double intervalScore,
     required double patternScore,
+    required double rangePatternScore,
   }) {
     // v35: Das Hybrid-Signal soll ausgewogener sein.
     // Häufigkeit und Rückstand bleiben wichtig, werden aber nicht so stark
     // belohnt, dass ein einzelnes Extrem-Signal den kompletten Tipp dominiert.
     final rawScore =
-        frequencyScore * 0.25 +
-        overdueScore * 0.20 +
-        intervalScore * 0.35 +
-        patternScore * 0.20;
+        frequencyScore * 0.22 +
+        overdueScore * 0.18 +
+        intervalScore * 0.32 +
+        patternScore * 0.18 +
+        rangePatternScore * 0.10;
 
     final strongestSignal = [
       frequencyScore,
       overdueScore,
       intervalScore,
       patternScore,
+      rangePatternScore,
     ].reduce(math.max);
     final weakestSignal = [
       frequencyScore,
       overdueScore,
       intervalScore,
       patternScore,
+      rangePatternScore,
     ].reduce(math.min);
     final spread = strongestSignal - weakestSignal;
 

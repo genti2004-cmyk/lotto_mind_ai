@@ -7,6 +7,7 @@ class NumberAnalysisScore {
     required this.overdueScore,
     required this.intervalScore,
     required this.patternScore,
+    this.rangePatternScore = 0.0,
     required this.hybridScore,
     required this.lastSeenDrawsAgo,
     required this.hitCount,
@@ -20,6 +21,7 @@ class NumberAnalysisScore {
   final double overdueScore;
   final double intervalScore;
   final double patternScore;
+  final double rangePatternScore;
   final double hybridScore;
   final int? lastSeenDrawsAgo;
   final int hitCount;
@@ -48,6 +50,7 @@ class NumberAnalysisScore {
       MapEntry('Rückstand', overdueScore),
       MapEntry('Intervall', intervalScore),
       MapEntry('Muster', patternScore),
+      MapEntry('Bereichsmuster', rangePatternScore),
     ]..sort((a, b) => b.value.compareTo(a.value));
 
     final best = signals.first;
@@ -56,6 +59,13 @@ class NumberAnalysisScore {
   }
 
   String get hybridPercentLabel => '${(hybridScore * 100).round()}%';
+
+  String get rangePatternLabel {
+    if (number <= 10) {
+      return 'kleine Zahlengruppe 1–10';
+    }
+    return 'große Zahlengruppe 11–49';
+  }
 
   String get intervalLabel {
     final average = averageInterval;
@@ -94,6 +104,10 @@ class NumberAnalysisScore {
 
     if (patternScore >= 0.45) {
       reasons.add('Muster-/Nachbarschaftssignal');
+    }
+
+    if (rangePatternScore >= 0.58) {
+      reasons.add('auffälliges Bereichsmuster $rangePatternLabel');
     }
 
     if (hybridScore >= 0.60 && reasons.length >= 2) {
