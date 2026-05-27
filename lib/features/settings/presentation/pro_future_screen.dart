@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_block_header.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/section_title.dart';
 import '../../generator/provider/lotto_app_state.dart';
@@ -51,7 +52,7 @@ class ProFutureScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _BlockHeader(
+                  const AppBlockHeader(
                     title: 'Aktive Freischaltungen',
                     subtitle:
                     'Hier siehst du, welche Funktionsgruppen in der aktuellen Edition verfügbar sind.',
@@ -94,7 +95,7 @@ class ProFutureScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _BlockHeader(
+                  AppBlockHeader(
                     title: 'Hinweis',
                     subtitle:
                     'Diese Stufen sind bewusst lokal vorbereitet. Später kann dieselbe Struktur mit In-App-Käufen, Lizenzprüfung oder Cloud-Account verbunden werden.',
@@ -165,42 +166,6 @@ class _EditionCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _BlockHeader extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _BlockHeader({
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-            height: 1.45,
-          ),
-        ),
-      ],
     );
   }
 }

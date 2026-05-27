@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:lotto_mind_ai/features/settings/domain/app_edition.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_block_header.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/section_title.dart';
 import '../../generator/provider/lotto_app_state.dart';
@@ -31,7 +32,7 @@ class AboutReleaseScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _BlockHeader(
+                  const AppBlockHeader(
                     title: 'App-Status',
                     subtitle: 'Die wichtigsten Produktdaten für den Release auf einen Blick.',
                   ),
@@ -58,7 +59,7 @@ class AboutReleaseScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _BlockHeader(
+                  AppBlockHeader(
                     title: 'Was wurde in v35/v36 verbessert?',
                     subtitle: 'Diese Punkte erklären die Änderungen am Signal-Tipp direkt in der App.',
                   ),
@@ -82,7 +83,7 @@ class AboutReleaseScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _BlockHeader(
+                  AppBlockHeader(
                     title: 'Release-Checkliste',
                     subtitle: 'Vor dem Upload in die Play Console einmal komplett abhaken.',
                   ),
@@ -108,7 +109,7 @@ class AboutReleaseScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _BlockHeader(
+                  AppBlockHeader(
                     title: 'App-Store-Readiness',
                     subtitle: 'Kurze Leitplanken für Beschreibung, Screenshots und Review.',
                   ),
@@ -126,7 +127,7 @@ class AboutReleaseScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _BlockHeader(
+                  AppBlockHeader(
                     title: 'Rechtliche Hinweise in der App',
                     subtitle: 'Diese Aussagen sind in der App sichtbar vorbereitet und sollten auch in Store-Texten konsistent bleiben.',
                   ),
@@ -144,7 +145,7 @@ class AboutReleaseScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _BlockHeader(
+                  AppBlockHeader(
                     title: 'Finale Schritte vor Veröffentlichung',
                     subtitle: 'Diese Punkte solltest du direkt vor dem Release noch erledigen.',
                   ),
@@ -165,25 +166,6 @@ class AboutReleaseScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _BlockHeader extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _BlockHeader({required this.title, required this.subtitle});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-        const SizedBox(height: 8),
-        Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500, height: 1.45)),
-      ],
     );
   }
 }

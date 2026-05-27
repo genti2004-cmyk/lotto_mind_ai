@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_block_header.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_title.dart';
@@ -183,7 +184,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _BlockHeader(
+                  const AppBlockHeader(
                     title: 'Datenübersicht',
                     subtitle:
                         'Diese Daten können in einer Gesamtsicherung gesichert werden.',
@@ -225,7 +226,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  _BlockHeader(
+                  AppBlockHeader(
                     title: 'Was wird gesichert?',
                     subtitle:
                         'Die Gesamtsicherung ist für Gerätewechsel, Support und spätere Wiederherstellung vorbereitet.',
@@ -267,7 +268,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _BlockHeader(
+                  const AppBlockHeader(
                     title: 'Backup erstellen',
                     subtitle:
                         'Erstelle eine Datei, teile sie oder prüfe vorab den Inhalt als Vorschau.',
@@ -298,7 +299,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _BlockHeader(
+                  const AppBlockHeader(
                     title: 'Backup wiederherstellen',
                     subtitle:
                         'Importiere nur Backups, die aus dieser App stammen. Vor dem Import am besten zuerst ein neues Backup erstellen.',
@@ -324,43 +325,6 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _BlockHeader extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _BlockHeader({
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-            height: 1.45,
-          ),
-        ),
-      ],
     );
   }
 }

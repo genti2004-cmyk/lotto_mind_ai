@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../settings/domain/app_edition.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_block_header.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/section_title.dart';
 import '../../generator/provider/lotto_app_state.dart';
@@ -47,7 +48,7 @@ class SettingsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _BlockHeader(
+                  const AppBlockHeader(
                     title: 'App-Status',
                     subtitle:
                         'Kurzer Überblick über deinen aktuellen Stand in der App.',
@@ -95,7 +96,7 @@ class SettingsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _BlockHeader(
+                  const AppBlockHeader(
                     title: 'Darstellung & Nutzung',
                     subtitle:
                         'Die wichtigsten Alltagsfunktionen bleiben in der Hauptnavigation. Expertenbereiche liegen unter „Mehr“.',
@@ -123,7 +124,7 @@ class SettingsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _BlockHeader(
+                  const AppBlockHeader(
                     title: 'Datenverwaltung',
                     subtitle:
                         'Sichere deine Daten, bevor du importierst, testest oder später größere Änderungen machst.',
@@ -155,7 +156,7 @@ class SettingsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _BlockHeader(
+                  const AppBlockHeader(
                     title: 'Analyse-Regeln',
                     subtitle:
                         'Feinsteuerung für Tipp-Erzeugung und Analyse. Für normale Nutzung müssen diese Werte nicht geändert werden.',
@@ -194,7 +195,7 @@ class SettingsScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            const _BlockHeader(
+            const AppBlockHeader(
               title: 'Weitere Verwaltung',
               subtitle:
                   'Optionen für Profile, Produktstufen und technische Informationen.',
@@ -273,42 +274,6 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-class _BlockHeader extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _BlockHeader({
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: const TextStyle(
-            fontSize: 14,
-            height: 1.45,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 }

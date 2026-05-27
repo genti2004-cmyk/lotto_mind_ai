@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_block_header.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/section_title.dart';
 
@@ -87,7 +88,7 @@ class _IntroNotice extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          _BlockHeader(
+          AppBlockHeader(
             title: 'Was die App macht',
             subtitle:
                 'Lotto Mind AI ist ein Analyse- und Assistenztool. Die App hilft, Ziehungsdaten, Tippstrategien und Rücktests verständlich zu betrachten.',
@@ -112,7 +113,7 @@ class _ResponsibleUseCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          _BlockHeader(
+          AppBlockHeader(
             title: 'Wichtig zu wissen',
             subtitle:
                 'Die App gibt keine Gewinnzusage. Lotto-Teilnahme erfolgt ausschließlich außerhalb der App beim offiziellen Anbieter. Bitte verantwortungsvoll spielen.',
@@ -226,39 +227,6 @@ class _StepCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _BlockHeader extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _BlockHeader({required this.title, required this.subtitle});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-            height: 1.45,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_block_header.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_title.dart';
@@ -78,7 +79,7 @@ class RuleProfilesScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _BlockHeader(
+                    AppBlockHeader(
                       title: 'Nicht freigeschaltet',
                       subtitle:
                       'Rule Profiles sind für die Future-Stufe vorbereitet.',
@@ -91,7 +92,7 @@ class RuleProfilesScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _BlockHeader(
+                    const AppBlockHeader(
                       title: 'Aktive Regeln sichern',
                       subtitle:
                       'Speichere den aktuellen Analyse-Regelsatz als wiederverwendbares Profil.',
@@ -194,42 +195,6 @@ class RuleProfilesScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _BlockHeader extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const _BlockHeader({
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-            height: 1.45,
-          ),
-        ),
-      ],
     );
   }
 }
