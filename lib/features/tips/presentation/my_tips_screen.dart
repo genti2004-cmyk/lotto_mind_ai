@@ -394,7 +394,7 @@ class _MyTipsScreenState extends State<MyTipsScreen> {
                         padding: const EdgeInsets.only(bottom: 14),
                         child: _TipTicketCard(
                           tip: tip,
-                          sourceLabel: tip.strategyLabel,
+                          sourceLabel: 'Strategie: ${tip.strategyLabel}',
                           isSelected: _selectedTipIds.contains(tip.id),
                           selectionMode: _selectionMode,
                           hitCount: state.hitCountForTip(tip.id),
