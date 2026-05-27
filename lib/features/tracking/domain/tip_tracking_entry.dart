@@ -1,6 +1,5 @@
 import '../../draws/domain/draw_result.dart';
 import '../../winnings/domain/lotto_win_value_model.dart';
-
 import '../../generator/domain/lotto_tip.dart';
 import '../../generator/domain/generator_strategy.dart';
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/product/product_plan.dart';
+import '../../settings/domain/product_plan.dart';
 import '../../../features/generator/provider/lotto_app_state.dart';
 import '../../../features/settings/domain/app_edition.dart';
 
