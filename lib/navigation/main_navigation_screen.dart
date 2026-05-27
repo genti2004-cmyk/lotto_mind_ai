@@ -10,6 +10,7 @@ import 'package:lotto_mind_ai/features/settings/presentation/export_center_scree
 import 'package:lotto_mind_ai/features/system/presentation/system_generator_screen.dart';
 import 'package:lotto_mind_ai/features/tracking/presentation/tracking_screen.dart';
 import 'package:lotto_mind_ai/features/pro/presentation/pro_screen.dart';
+import 'package:lotto_mind_ai/features/onboarding/presentation/onboarding_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -109,6 +110,14 @@ class _MoreScreen extends StatelessWidget {
           ),
           const SizedBox(height: 22),
           const _MoreSectionTitle('Verwaltung'),
+          _MoreCard(
+            title: 'Erster Start',
+            subtitle: 'Kurze Einführung: Daten aktualisieren, Tipp erstellen, speichern und prüfen.',
+            badge: 'Normal',
+            icon: Icons.school_rounded,
+            onTap: () => _open(context, const OnboardingScreen()),
+          ),
+          const SizedBox(height: 12),
           _MoreCard(
             title: 'Export Center',
             subtitle: 'Backups, Datenexport und Wiederherstellung verwalten.',

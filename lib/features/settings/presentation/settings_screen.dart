@@ -9,6 +9,8 @@ import '../../generator/provider/lotto_app_state.dart';
 import 'about_release_screen.dart';
 import 'export_center_screen.dart';
 import 'pro_future_screen.dart';
+import 'legal_notice_screen.dart';
+import '../../onboarding/presentation/onboarding_screen.dart';
 import 'rule_profiles_screen.dart';
 import 'rules_editor_screen.dart';
 
@@ -53,7 +55,7 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _InfoLine(label: 'Aktueller Plan', value: edition.label),
                   const SizedBox(height: 10),
-                  const _InfoLine(label: 'App-Status', value: 'Refactor v19'),
+                  const _InfoLine(label: 'App-Status', value: 'v33 Onboarding / Erster Start'),
                   const SizedBox(height: 10),
                   _InfoLine(
                     label: 'Letzte Mittwoch-Ziehung',
@@ -221,6 +223,35 @@ class SettingsScreen extends StatelessWidget {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const ProFutureScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+
+
+            _NavCard(
+              title: 'Erster Start',
+              subtitle: 'Kurze Einführung für neue Nutzer',
+              icon: Icons.school_rounded,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const OnboardingScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+
+            _NavCard(
+              title: 'Hinweise & Verantwortung',
+              subtitle: 'Keine Gewinnzusage, verantwortungsvolle Nutzung und Datenschutz',
+              icon: Icons.gavel_rounded,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const LegalNoticeScreen(),
                   ),
                 );
               },

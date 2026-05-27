@@ -24,7 +24,7 @@ class AboutReleaseScreen extends StatelessWidget {
           children: [
             const SectionTitle(
               title: 'Lotto Mind AI – Release',
-              subtitle: 'v31 App-Store-Readiness, Produktklarheit und finale Freigabe-Checks',
+              subtitle: 'v33 Onboarding / Erster Start, App-Store-Readiness und finale Freigabe-Checks',
             ),
             const SizedBox(height: 20),
             AppCard(
@@ -38,7 +38,7 @@ class AboutReleaseScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   const _InfoRow(label: 'App-Name', value: 'Lotto Mind AI'),
                   const SizedBox(height: 10),
-                  const _InfoRow(label: 'Release-Stufe', value: 'v31 App-Store-Readiness'),
+                  const _InfoRow(label: 'Release-Stufe', value: 'v33 Onboarding / Erster Start'),
                   const SizedBox(height: 10),
                   _InfoRow(label: 'Edition', value: state.edition.label),
                   const SizedBox(height: 10),
@@ -48,7 +48,7 @@ class AboutReleaseScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   _InfoRow(label: 'Regelprofile', value: '${state.ruleProfiles.length}'),
                   const SizedBox(height: 10),
-                  const _InfoRow(label: 'Stabilitätsstand', value: 'Release-Kandidat v30 + App-Store-Readiness v31'),
+                  const _InfoRow(label: 'Stabilitätsstand', value: 'v30 Release-Kandidat + v31 App-Store-Readiness + v32 Hinweise + v33 Onboarding'),
                 ],
               ),
             ),
@@ -69,6 +69,8 @@ class AboutReleaseScreen extends StatelessWidget {
                   _ReleaseLine('Signalmodell, Strategie-Tracking und Rücktest-Anzeige sind integriert'),
                   _ReleaseLine('Vor Store-Upload: Versionsnummer, Datenschutz und AAB final prüfen'),
                   _ReleaseLine('Store-Texte ohne Gewinnversprechen oder sichere Vorhersage formulieren'),
+                  _ReleaseLine('Hinweise zu Mindestalter, verantwortungsvollem Spielen und Anbieter-Abgabe sichtbar halten'),
+                  _ReleaseLine('Erster-Start-Anleitung für neue Nutzer öffnen und prüfen'),
                   _ReleaseLine('Normal / Pro / Premium als vorbereitet kennzeichnen, solange keine echte Paywall aktiv ist'),
                 ],
               ),
@@ -88,6 +90,25 @@ class AboutReleaseScreen extends StatelessWidget {
                   _ReleaseLine('Screenshots: Start, Generator, Meine Tipps, Ziehungen, Tracking Pro'),
                   _ReleaseLine('Datenschutz: lokale Speicherung, Export/Backup und externe Links klar erklären'),
                   _ReleaseLine('Review-Hinweis: Glücksspielteilnahme erfolgt außerhalb der App beim Anbieter'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+            const AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _BlockHeader(
+                    title: 'Rechtliche Hinweise in der App',
+                    subtitle: 'Diese Aussagen sind in der App sichtbar vorbereitet und sollten auch in Store-Texten konsistent bleiben.',
+                  ),
+                  SizedBox(height: 14),
+                  _ReleaseLine('Analyse historischer Daten, keine sichere Vorhersage'),
+                  _ReleaseLine('Keine Gewinnzusage durch Tipps, Rücktests oder Simulationen'),
+                  _ReleaseLine('Lotto-Abgabe erfolgt ausschließlich beim offiziellen Anbieter'),
+                  _ReleaseLine('Mindestalter und verantwortungsvolles Spielen beachten'),
+                  _ReleaseLine('Daten werden lokal gespeichert; Backup/Export wird aktiv durch Nutzer ausgelöst'),
                 ],
               ),
             ),
