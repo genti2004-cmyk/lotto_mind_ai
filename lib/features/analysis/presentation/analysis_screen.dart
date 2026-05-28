@@ -135,7 +135,7 @@ class AnalysisScreen extends StatelessWidget {
 }
 
 
-class _SignalModelCard extends StatelessWidget {
+class _SignalModelCard extends StatefulWidget {
   const _SignalModelCard({
     required this.frequencyScores,
     required this.overdueScores,
@@ -150,8 +150,15 @@ class _SignalModelCard extends StatelessWidget {
   final List<NumberAnalysisScore> hybridScores;
   final List<NumberAnalysisScore> rangeScores;
 
-  bool get _hasScores => hybridScores.isNotEmpty &&
-      hybridScores.any((score) => score.hybridScore > 0 || score.hitCount > 0);
+  @override
+  State<_SignalModelCard> createState() => _SignalModelCardState();
+}
+
+class _SignalModelCardState extends State<_SignalModelCard> {
+  bool _showDetails = false;
+
+  bool get _hasScores => widget.hybridScores.isNotEmpty &&
+      widget.hybridScores.any((score) => score.hybridScore > 0 || score.hitCount > 0);
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +176,7 @@ class _SignalModelCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Die Analyse zeigt getrennt, welche Zahlen nach Häufigkeit, Rückstand, Intervall und Hybrid-Score aktuell auffällig sind. Das ist eine Bewertung historischer Muster, keine sichere Vorhersage.',
+            'Kompakte Übersicht der auffälligen Muster. Details zu Häufigkeit, Rückstand und Intervall kannst du bei Bedarf einblenden.',
             style: TextStyle(
               fontSize: 13,
               height: 1.4,
@@ -189,45 +196,96 @@ class _SignalModelCard extends StatelessWidget {
             )
           else ...[
             _SignalTopRow(
-              title: 'Häufigkeit',
-              subtitle: 'kam im Analysefenster überdurchschnittlich oft vor',
-              icon: Icons.bar_chart_rounded,
-              scores: frequencyScores,
-              signal: AnalysisSignal.frequency,
-            ),
-            const SizedBox(height: 12),
-            _SignalTopRow(
-              title: 'Rückstand',
-              subtitle: 'liegt aktuell länger zurück als üblich',
-              icon: Icons.history_toggle_off_rounded,
-              scores: overdueScores,
-              signal: AnalysisSignal.overdue,
-            ),
-            const SizedBox(height: 12),
-            _SignalTopRow(
-              title: 'Intervall',
-              subtitle: 'aktueller Abstand passt zum typischen Zahlenzyklus',
-              icon: Icons.timeline_rounded,
-              scores: intervalScores,
-              signal: AnalysisSignal.interval,
-            ),
-            const SizedBox(height: 12),
-            _RangePatternRow(scores: rangeScores),
-            const SizedBox(height: 12),
-            const _SpacingPatternInfoRow(),
-            const SizedBox(height: 12),
-            _SignalTopRow(
               title: 'Hybrid',
               subtitle: 'kombiniert Häufigkeit, Rückstand, Intervall, Muster, Bereichsverteilung und Streuung',
               icon: Icons.auto_awesome_rounded,
-              scores: hybridScores,
+              scores: widget.hybridScores,
               signal: AnalysisSignal.hybrid,
               highlighted: true,
             ),
-            const SizedBox(height: 14),
-            const _SignalLegend(),
+            const SizedBox(height: 12),
+            _RangePatternRow(scores: widget.rangeScores),
+            const SizedBox(height: 12),
+            const _SpacingPatternInfoRow(),
+            const SizedBox(height: 12),
+            _DetailsToggleButton(
+              expanded: _showDetails,
+              onTap: () => setState(() => _showDetails = !_showDetails),
+            ),
+            if (_showDetails) ...[
+              const SizedBox(height: 12),
+              _SignalTopRow(
+                title: 'Häufigkeit',
+                subtitle: 'kam im Analysefenster überdurchschnittlich oft vor',
+                icon: Icons.bar_chart_rounded,
+                scores: widget.frequencyScores,
+                signal: AnalysisSignal.frequency,
+              ),
+              const SizedBox(height: 12),
+              _SignalTopRow(
+                title: 'Rückstand',
+                subtitle: 'liegt aktuell länger zurück als üblich',
+                icon: Icons.history_toggle_off_rounded,
+                scores: widget.overdueScores,
+                signal: AnalysisSignal.overdue,
+              ),
+              const SizedBox(height: 12),
+              _SignalTopRow(
+                title: 'Intervall',
+                subtitle: 'aktueller Abstand passt zum typischen Zahlenzyklus',
+                icon: Icons.timeline_rounded,
+                scores: widget.intervalScores,
+                signal: AnalysisSignal.interval,
+              ),
+              const SizedBox(height: 14),
+              const _SignalLegend(),
+            ],
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _DetailsToggleButton extends StatelessWidget {
+  const _DetailsToggleButton({required this.expanded, required this.onTap});
+
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+              size: 20,
+              color: AppColors.primaryDark,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                expanded ? 'Details ausblenden' : 'Details zu Häufigkeit, Rückstand und Intervall anzeigen',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
