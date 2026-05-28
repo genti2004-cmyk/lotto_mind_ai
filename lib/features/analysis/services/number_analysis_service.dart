@@ -11,12 +11,21 @@ class NumberAnalysisService {
   static const int _maxNumber = 49;
   static const int _numbersPerDraw = 6;
 
+  static final Map<String, List<NumberAnalysisScore>> _analysisCache =
+      <String, List<NumberAnalysisScore>>{};
+  static const int _maxCacheEntries = 8;
+
   List<NumberAnalysisScore> analyzeNumbers(List<DrawResult> draws) {
     final orderedDraws = List<DrawResult>.from(draws)
       ..sort((a, b) => b.drawDate.compareTo(a.drawDate));
+    final cacheKey = _cacheKeyForDraws(orderedDraws);
+    final cachedScores = _analysisCache[cacheKey];
+    if (cachedScores != null) {
+      return List<NumberAnalysisScore>.from(cachedScores);
+    }
 
     if (orderedDraws.isEmpty) {
-      return List.generate(
+      final emptyScores = List.generate(
         _maxNumber,
         (index) => NumberAnalysisScore(
           number: index + 1,
@@ -33,13 +42,19 @@ class NumberAnalysisService {
           intervalRatio: null,
         ),
       );
+      _saveToCache(cacheKey, emptyScores);
+      return List<NumberAnalysisScore>.from(emptyScores);
     }
 
     final totalDraws = orderedDraws.length;
-    final expectedHits = math.max(1.0, totalDraws * (_numbersPerDraw / _maxNumber));
+    final expectedHits = math.max(
+      1.0,
+      totalDraws * (_numbersPerDraw / _maxNumber),
+    );
     final baselineInterval = _maxNumber / _numbersPerDraw;
     final hitsByNumber = <int, List<int>>{
-      for (int number = _minNumber; number <= _maxNumber; number++) number: <int>[],
+      for (int number = _minNumber; number <= _maxNumber; number++)
+        number: <int>[],
     };
 
     for (var drawIndex = 0; drawIndex < orderedDraws.length; drawIndex++) {
@@ -110,7 +125,8 @@ class NumberAnalysisService {
       final byScore = b.hybridScore.compareTo(a.hybridScore);
       return byScore != 0 ? byScore : a.number.compareTo(b.number);
     });
-    return scores;
+    _saveToCache(cacheKey, scores);
+    return List<NumberAnalysisScore>.from(scores);
   }
 
   List<NumberAnalysisScore> topBySignal(
@@ -127,6 +143,21 @@ class NumberAnalysisService {
       return _diversified(scores, limit: limit);
     }
     return scores.take(limit).toList();
+  }
+
+  String _cacheKeyForDraws(List<DrawResult> orderedDraws) {
+    if (orderedDraws.isEmpty) return 'empty';
+    return orderedDraws.map((draw) {
+      final numbers = List<int>.from(draw.numbers)..sort();
+      return '${draw.drawDate.toIso8601String()}|${numbers.join(',')}|${draw.superNumber ?? '-'}';
+    }).join(';');
+  }
+
+  void _saveToCache(String key, List<NumberAnalysisScore> scores) {
+    if (_analysisCache.length >= _maxCacheEntries && !_analysisCache.containsKey(key)) {
+      _analysisCache.remove(_analysisCache.keys.first);
+    }
+    _analysisCache[key] = List<NumberAnalysisScore>.from(scores);
   }
 
   double _frequencyScore(int hitCount, double expectedHits) {
