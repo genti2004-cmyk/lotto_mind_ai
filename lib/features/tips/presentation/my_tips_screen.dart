@@ -1163,7 +1163,7 @@ _TipStatus _buildTipStatus(LottoTip tip, TipEvaluationResult? result) {
     return _TipStatus(
       icon: result.hasAnyWin ? Icons.emoji_events_rounded : Icons.fact_check_rounded,
       label: label,
-      detail: 'Prüf-Ziehung: ${_formatDate(result.draw.drawDate)}',
+      detail: 'Ergebnis ansehen: geprüft mit ${_formatDate(result.draw.drawDate)}.',
       background: result.hasAnyWin ? AppColors.successSoft : AppColors.surfaceSoft,
       border: result.hasAnyWin ? AppColors.success.withOpacity(0.22) : AppColors.border,
       color: result.hasAnyWin ? AppColors.success : AppColors.textPrimary,
@@ -1174,7 +1174,7 @@ _TipStatus _buildTipStatus(LottoTip tip, TipEvaluationResult? result) {
     return _TipStatus(
       icon: Icons.help_outline_rounded,
       label: 'Zielziehung offen',
-      detail: 'Dieser Tipp ist älter oder noch keinem Mittwoch/Samstag zugeordnet.',
+      detail: 'Nächste Aktion: Zielziehung prüfen oder neuen Tipp speichern.',
       background: AppColors.warningSoft,
       border: AppColors.warning.withOpacity(0.22),
       color: AppColors.warning,
@@ -1185,8 +1185,8 @@ _TipStatus _buildTipStatus(LottoTip tip, TipEvaluationResult? result) {
   if (targetDate == null) {
     return _TipStatus(
       icon: Icons.event_available_rounded,
-      label: 'Ziel: ${tip.targetDrawType.label}',
-      detail: 'Wähle eine passende ${tip.targetDrawType.label}-Ziehung für die Prüfung.',
+      label: 'Zielziehung: ${tip.targetDrawType.label}',
+      detail: 'Nächste Aktion: passende ${tip.targetDrawType.label}-Ziehung wählen und Tipp prüfen.',
       background: AppColors.infoSoft,
       border: AppColors.border,
       color: AppColors.primary,
@@ -1199,7 +1199,7 @@ _TipStatus _buildTipStatus(LottoTip tip, TipEvaluationResult? result) {
     return _TipStatus(
       icon: Icons.schedule_rounded,
       label: 'Wartet auf ${tip.targetDrawType.label}',
-      detail: 'Gültig für ${_formatDate(targetDate)}. Prüfung erst nach der Ziehung.',
+      detail: 'Nächste Aktion: nach der Ziehung prüfen (${_formatDate(targetDate)}).',
       background: AppColors.infoSoft,
       border: AppColors.border,
       color: AppColors.primary,
@@ -1209,7 +1209,7 @@ _TipStatus _buildTipStatus(LottoTip tip, TipEvaluationResult? result) {
   return _TipStatus(
     icon: Icons.playlist_add_check_circle_rounded,
     label: 'Bereit zur Prüfung',
-    detail: 'Passende ${tip.targetDrawType.label}-Ziehung wählen und prüfen.',
+    detail: 'Nächste Aktion: passende ${tip.targetDrawType.label}-Ziehung wählen und Tipp prüfen.',
     background: AppColors.surfaceSoft,
     border: AppColors.border,
     color: AppColors.textPrimary,
@@ -1494,7 +1494,7 @@ class _TipTicketCard extends StatelessWidget {
                 Expanded(
                   child: _InfoBadge(
                     icon: Icons.analytics_rounded,
-                    label: evaluationResult == null ? 'Noch nicht geprüft' : '$hitCount Richtige',
+                    label: evaluationResult == null ? 'Noch nicht geprüft' : 'Ergebnis: $hitCount Richtige',
                     valueColor: evaluationResult != null && hitCount >= 3 ? AppColors.success : AppColors.textPrimary,
                   ),
                 ),
@@ -1503,7 +1503,7 @@ class _TipTicketCard extends StatelessWidget {
                   child: _InfoBadge(
                     icon: Icons.track_changes_rounded,
                     label: evaluationResult == null
-                        ? 'Treffer erscheinen nach Prüfung'
+                        ? 'Treffer nach Prüfung sichtbar'
                         : (matchedNumbers.isEmpty ? 'Keine Zahl getroffen' : 'Treffer: ${matchedNumbers.join(', ')}'),
                   ),
                 ),
