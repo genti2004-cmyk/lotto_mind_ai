@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/number_ball.dart';
+import '../../draws/domain/draw_data_status.dart';
 import '../../draws/domain/draw_result.dart';
 import '../../draws/presentation/draw_results_screen.dart';
 import '../../generator/presentation/generator_screen.dart';
@@ -16,17 +17,12 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<LottoAppState>();
-    final latestWednesday = state.wednesdayDrawResults.isEmpty
-        ? null
-        : state.wednesdayDrawResults.first;
-    final latestSaturday = state.saturdayDrawResults.isEmpty
-        ? null
-        : state.saturdayDrawResults.first;
-    final latestDrawDate = _latestDrawDate(state.drawResults);
-    final dataAgeDays = latestDrawDate == null
-        ? null
-        : DateTime.now().difference(latestDrawDate).inDays;
-    final dataNeedsUpdate = latestDrawDate == null || (dataAgeDays ?? 9999) > 7;
+    final dataStatus = DrawDataStatus.fromDraws(state.drawResults);
+    final latestWednesday = dataStatus.latestWednesday;
+    final latestSaturday = dataStatus.latestSaturday;
+    final latestDrawDate = dataStatus.latestDraw?.drawDate;
+    final dataAgeDays = dataStatus.ageDays;
+    final dataNeedsUpdate = dataStatus.needsUpdate;
     final tip = state.lastGeneratedTip;
     final superNumber = state.lastGeneratedSuperNumber;
     final hasTip = tip != null && tip.isNotEmpty;
@@ -55,6 +51,7 @@ class HomeScreen extends StatelessWidget {
               dataNeedsUpdate: dataNeedsUpdate,
               hasWednesday: latestWednesday != null,
               hasSaturday: latestSaturday != null,
+              dataStatus: dataStatus,
               onUpdateDraws: () => _open(context, const DrawResultsScreen()),
             ),
             const SizedBox(height: 14),
@@ -188,6 +185,7 @@ class _DataFreshnessCard extends StatelessWidget {
   final bool dataNeedsUpdate;
   final bool hasWednesday;
   final bool hasSaturday;
+  final DrawDataStatus dataStatus;
   final VoidCallback onUpdateDraws;
 
   const _DataFreshnessCard({
@@ -196,17 +194,14 @@ class _DataFreshnessCard extends StatelessWidget {
     required this.dataNeedsUpdate,
     required this.hasWednesday,
     required this.hasSaturday,
+    required this.dataStatus,
     required this.onUpdateDraws,
   });
 
   @override
   Widget build(BuildContext context) {
-    final title = dataNeedsUpdate ? 'Daten aktualisieren empfohlen' : 'Daten wirken aktuell';
-    final subtitle = latestDrawDate == null
-        ? 'Es sind noch keine Ziehungen gespeichert. Aktualisiere zuerst die Daten.'
-        : dataNeedsUpdate
-            ? 'Die neueste gespeicherte Ziehung ist ${dataAgeDays ?? '-'} Tage alt.'
-            : 'Neueste Ziehung: ${_formatDate(latestDrawDate!)}.';
+    final title = dataStatus.title;
+    final subtitle = dataStatus.guidance;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -261,6 +256,10 @@ class _DataFreshnessCard extends StatelessWidget {
           _InfoLine(label: 'Mittwoch-Daten', value: hasWednesday ? 'vorhanden' : 'fehlen'),
           const SizedBox(height: 8),
           _InfoLine(label: 'Samstag-Daten', value: hasSaturday ? 'vorhanden' : 'fehlen'),
+          const SizedBox(height: 8),
+          _InfoLine(label: 'Pflichtdaten', value: dataStatus.coreDataLabel),
+          const SizedBox(height: 8),
+          _InfoLine(label: 'Zusatzlotterien', value: dataStatus.additionalDataLabel),
           if (dataNeedsUpdate) ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -843,18 +842,6 @@ class _InfoLine extends StatelessWidget {
       },
     );
   }
-}
-
-DateTime? _latestDrawDate(List<DrawResult> draws) {
-  if (draws.isEmpty) return null;
-  DateTime? latest;
-  for (final draw in draws) {
-    final date = draw.drawDate;
-    if (latest == null || date.isAfter(latest)) {
-      latest = date;
-    }
-  }
-  return latest;
 }
 
 String _formatDate(DateTime date) => AppFormatUtils.date(date);

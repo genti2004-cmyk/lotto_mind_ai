@@ -6,6 +6,7 @@ import '../../../core/widgets/number_ball.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_title.dart';
 import '../../generator/provider/lotto_app_state.dart';
+import '../domain/draw_data_status.dart';
 import '../domain/draw_result.dart';
 import '../domain/draw_type.dart';
 import '../domain/tip_check_result.dart';
@@ -176,15 +177,10 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
     final state = context.watch<LottoAppState>();
     final selectedDraw = state.selectedDrawForCheck;
     final results = state.latestCheckResults;
-    final latestDraw = state.drawResults.isEmpty ? null : state.drawResults.first;
-    final latestWednesday = _latestDrawForType(
-      state.drawResults,
-      DrawType.wednesday,
-    );
-    final latestSaturday = _latestDrawForType(
-      state.drawResults,
-      DrawType.saturday,
-    );
+    final dataStatus = DrawDataStatus.fromDraws(state.drawResults);
+    final latestDraw = dataStatus.latestDraw;
+    final latestWednesday = dataStatus.latestWednesday;
+    final latestSaturday = dataStatus.latestSaturday;
     final wednesdayCount = state.drawResults
         .where((draw) => DrawTypeX.fromDate(draw.drawDate) == DrawType.wednesday)
         .length;
@@ -227,6 +223,7 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
               latestSaturday: latestSaturday,
               totalDraws: state.drawResults.length,
               lastImportMessage: state.lastImportMessage,
+              dataStatus: dataStatus,
             ),
 
             const SizedBox(height: 18),
@@ -491,6 +488,7 @@ class _DataQualityCard extends StatelessWidget {
   final DrawResult? latestSaturday;
   final int totalDraws;
   final String? lastImportMessage;
+  final DrawDataStatus dataStatus;
 
   const _DataQualityCard({
     required this.latestDraw,
@@ -498,31 +496,16 @@ class _DataQualityCard extends StatelessWidget {
     required this.latestSaturday,
     required this.totalDraws,
     required this.lastImportMessage,
+    required this.dataStatus,
   });
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final ageDays = latestDraw == null
-        ? null
-        : now.difference(DateTime(
-            latestDraw!.drawDate.year,
-            latestDraw!.drawDate.month,
-            latestDraw!.drawDate.day,
-          )).inDays;
-
-    final isCurrent = ageDays != null && ageDays <= 10;
-    final hasBothDrawDays = latestWednesday != null && latestSaturday != null;
-    final statusText = latestDraw == null
-        ? 'Noch keine Ziehungen vorhanden'
-        : isCurrent
-            ? 'Daten wirken aktuell'
-            : 'Daten prüfen / aktualisieren';
-    final statusColor = latestDraw == null
-        ? AppColors.warning
-        : isCurrent
-            ? AppColors.success
-            : AppColors.warning;
+    final ageDays = dataStatus.ageDays;
+    final statusText = dataStatus.title;
+    final statusColor = dataStatus.hasCurrentCoreData
+        ? AppColors.success
+        : AppColors.warning;
 
     return _Panel(
       title: 'Datenqualität',
@@ -565,7 +548,7 @@ class _DataQualityCard extends StatelessWidget {
           const SizedBox(height: 8),
           _QualityRow(
             label: 'Mittwoch/Samstag vorhanden',
-            value: hasBothDrawDays ? 'Ja' : 'Bitte aktualisieren',
+            value: dataStatus.hasBothDrawDays ? 'Ja' : 'Bitte aktualisieren',
           ),
           const SizedBox(height: 8),
           _QualityRow(
@@ -574,8 +557,13 @@ class _DataQualityCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _QualityRow(
+            label: 'Pflichtdaten',
+            value: dataStatus.coreDataLabel,
+          ),
+          const SizedBox(height: 8),
+          _QualityRow(
             label: 'Zusatzlotterien',
-            value: _additionalQualityLabel(latestDraw),
+            value: dataStatus.additionalDataLabel,
           ),
           if (lastImportMessage != null && lastImportMessage!.trim().isNotEmpty) ...[
             const SizedBox(height: 12),

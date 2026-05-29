@@ -12,6 +12,7 @@ import '../../../core/widgets/primary_button.dart';
 import '../../analysis/presentation/ai_max_mode_screen.dart';
 import '../../analysis/domain/number_analysis_score.dart';
 import '../../analysis/presentation/win_simulation_screen.dart';
+import '../../draws/domain/draw_data_status.dart';
 import '../../generator/provider/lotto_app_state.dart';
 import '../../generator/domain/generator_strategy.dart';
 import '../../generator/services/ai_master_mode_service.dart';
@@ -224,6 +225,7 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   Widget build(BuildContext context) {
     final state = context.watch<LottoAppState>();
     final summary = state.analysisSummary;
+    final dataStatus = DrawDataStatus.fromDraws(state.drawResults);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -274,6 +276,8 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
+                    _GeneratorDataStatusCard(dataStatus: dataStatus),
+                    const SizedBox(height: 12),
                     _ModeTabs(
                       index: _tabIndex,
                       onChanged: _goToTab,
@@ -311,6 +315,57 @@ class _GeneratorScreenState extends State<GeneratorScreen> {
   }
 }
 
+
+
+class _GeneratorDataStatusCard extends StatelessWidget {
+  final DrawDataStatus dataStatus;
+
+  const _GeneratorDataStatusCard({required this.dataStatus});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = dataStatus.hasCurrentCoreData ? AppColors.success : AppColors.warning;
+    final icon = dataStatus.hasCurrentCoreData
+        ? Icons.verified_rounded
+        : Icons.info_outline_rounded;
+
+    return _SubCard(
+      title: 'Datenbasis für den Generator',
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  dataStatus.title,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${dataStatus.analysisBaseLabel} • Pflichtdaten: ${dataStatus.coreDataLabel} • Zusatzdaten: ${dataStatus.additionalDataLabel}',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _GeneratorPdfExportButton extends StatelessWidget {
   final LottoAppState state;

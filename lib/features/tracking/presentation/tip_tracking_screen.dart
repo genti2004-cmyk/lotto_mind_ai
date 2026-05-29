@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../draws/domain/draw_data_status.dart';
 import '../../generator/domain/generator_strategy.dart';
 import '../domain/tip_tracking_entry.dart';
 import '../../generator/provider/lotto_app_state.dart';
@@ -100,6 +101,7 @@ class _TipTrackingScreenState extends State<TipTrackingScreen> {
     final distribution = _buildDistribution(entries);
     final stats = _TrackingStats.from(entries);
     final draw = state.selectedDrawForCheck;
+    final dataStatus = DrawDataStatus.fromDraws(state.drawResults);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -126,6 +128,8 @@ class _TipTrackingScreenState extends State<TipTrackingScreen> {
               selectedDrawLabel: draw == null ? 'Keine Prüf-Ziehung gewählt' : _dateLabel(draw.drawDate),
               savedTipCount: state.savedTips.length,
             ),
+            const SizedBox(height: 14),
+            _TrackingDataStatusCard(dataStatus: dataStatus),
             const SizedBox(height: 14),
             _ActionPanel(
               selectedDrawLabel: draw == null ? 'Nicht gewählt' : _dateLabel(draw.drawDate),
@@ -217,6 +221,58 @@ class _TrackingStats {
       hits3Plus: entries.where((entry) => entry.hitCount >= 3).length,
       superHits: entries.where((entry) => entry.superHit).length,
       distinctDraws: entries.map((entry) => entry.drawId).toSet().length,
+    );
+  }
+}
+
+
+class _TrackingDataStatusCard extends StatelessWidget {
+  final DrawDataStatus dataStatus;
+
+  const _TrackingDataStatusCard({required this.dataStatus});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = dataStatus.hasCurrentCoreData ? AppColors.success : AppColors.warning;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.dataset_linked_rounded, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rücktest-Datenbasis: ${dataStatus.shortLabel}',
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Tracking Pro nutzt ${dataStatus.analysisBaseLabel}. Zusatzlotterien sind optional und beeinflussen die Lottozahlen-Bewertung nicht.',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

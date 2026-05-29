@@ -6,6 +6,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/number_ball.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/section_title.dart';
+import '../../draws/domain/draw_data_status.dart';
 import '../../draws/domain/draw_result.dart';
 import '../domain/analysis_signal.dart';
 import '../domain/number_analysis_score.dart';
@@ -23,6 +24,7 @@ class AnalysisScreen extends StatelessWidget {
     final summary = state.analysisSummary;
     final aiSummary = state.analysisAiSummary;
     final proSummary = state.analysisProSummary;
+    final dataStatus = DrawDataStatus.fromDraws(state.drawResults);
     const signalService = NumberAnalysisService();
     final frequencyScores = signalService.topBySignal(
       state.analysisDrawResults,
@@ -64,6 +66,8 @@ class AnalysisScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             _HeroCard(state: state),
+            const SizedBox(height: 14),
+            _AnalysisDataStatusCard(dataStatus: dataStatus),
             const SizedBox(height: 14),
             _QuickActionsCard(
               onAiMax: () {
@@ -134,6 +138,55 @@ class AnalysisScreen extends StatelessWidget {
   }
 }
 
+
+
+class _AnalysisDataStatusCard extends StatelessWidget {
+  final DrawDataStatus dataStatus;
+
+  const _AnalysisDataStatusCard({required this.dataStatus});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = dataStatus.hasCurrentCoreData ? AppColors.success : AppColors.warning;
+    return AppCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            dataStatus.hasCurrentCoreData ? Icons.analytics_rounded : Icons.sync_problem_rounded,
+            color: color,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Analysebasis: ${dataStatus.shortLabel}',
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${dataStatus.analysisBaseLabel}. ${dataStatus.guidance}',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _SignalModelCard extends StatefulWidget {
   const _SignalModelCard({
