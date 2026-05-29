@@ -221,6 +221,16 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
 
             const SizedBox(height: 18),
 
+            _DataQualityCard(
+              latestDraw: latestDraw,
+              latestWednesday: latestWednesday,
+              latestSaturday: latestSaturday,
+              totalDraws: state.drawResults.length,
+              lastImportMessage: state.lastImportMessage,
+            ),
+
+            const SizedBox(height: 18),
+
             if (latestDraw != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 18),
@@ -436,6 +446,158 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+class _DataQualityCard extends StatelessWidget {
+  final DrawResult? latestDraw;
+  final DrawResult? latestWednesday;
+  final DrawResult? latestSaturday;
+  final int totalDraws;
+  final String? lastImportMessage;
+
+  const _DataQualityCard({
+    required this.latestDraw,
+    required this.latestWednesday,
+    required this.latestSaturday,
+    required this.totalDraws,
+    required this.lastImportMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final ageDays = latestDraw == null
+        ? null
+        : now.difference(DateTime(
+            latestDraw!.drawDate.year,
+            latestDraw!.drawDate.month,
+            latestDraw!.drawDate.day,
+          )).inDays;
+
+    final isCurrent = ageDays != null && ageDays <= 10;
+    final hasBothDrawDays = latestWednesday != null && latestSaturday != null;
+    final statusText = latestDraw == null
+        ? 'Noch keine Ziehungen vorhanden'
+        : isCurrent
+            ? 'Daten wirken aktuell'
+            : 'Daten prüfen / aktualisieren';
+    final statusColor = latestDraw == null
+        ? AppColors.warning
+        : isCurrent
+            ? AppColors.success
+            : AppColors.warning;
+
+    return _Panel(
+      title: 'Datenqualität',
+      subtitle: 'Prüft, ob die gespeicherten Ziehungen für Analyse und Generator brauchbar sind.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.verified_rounded, color: statusColor, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _QualityRow(
+            label: 'Importquelle',
+            value: 'JSON-Archiv + HTML-Fallback',
+          ),
+          const SizedBox(height: 8),
+          _QualityRow(
+            label: 'Neueste Ziehung',
+            value: latestDraw == null
+                ? '-'
+                : '${_drawTypeLabel(latestDraw!.drawDate)} • ${_formatDate(latestDraw!.drawDate)}',
+          ),
+          const SizedBox(height: 8),
+          _QualityRow(
+            label: 'Alter der Daten',
+            value: ageDays == null ? '-' : '$ageDays Tage',
+          ),
+          const SizedBox(height: 8),
+          _QualityRow(
+            label: 'Mittwoch/Samstag vorhanden',
+            value: hasBothDrawDays ? 'Ja' : 'Bitte aktualisieren',
+          ),
+          const SizedBox(height: 8),
+          _QualityRow(
+            label: 'Gespeicherte Ziehungen',
+            value: '$totalDraws',
+          ),
+          if (lastImportMessage != null && lastImportMessage!.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              lastImportMessage!,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                height: 1.35,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          const Text(
+            'Hinweis: Ein grüner Status bedeutet nur, dass die Datenbasis für Analyse und Tipp-Erstellung plausibel aktuell ist. Es ist keine Gewinnzusage.',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QualityRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _QualityRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
