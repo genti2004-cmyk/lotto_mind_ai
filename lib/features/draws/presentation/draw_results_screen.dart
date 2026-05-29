@@ -289,11 +289,20 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
                     const SizedBox(height: 8),
                     Text(
                       state.importCurrentYear == null
-                          ? 'Import läuft'
+                          ? 'Suche läuft… bitte kurz warten.'
                           : 'Jahr ${state.importCurrentYear} • ${state.importProcessedYears}/${state.importTotalYears}',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Der Import ist gesperrt, bis die aktuelle Suche fertig ist.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        height: 1.3,
                       ),
                     ),
                   ],

@@ -20,6 +20,8 @@ class LottoResultsImportService {
       'https://www.lottoster.com/de/lotto-6aus49/results/';
   static const String _lottoNetLatestUrl =
       'https://www.lotto.net/de/deutsches-lotto/ergebnisse';
+  static const String _lottoArchiveTidyJsonUrl =
+      'https://johannesfriedrich.github.io/LottoNumberArchive/Lottonumbers_tidy_complete.json';
 
   Future<List<DrawResult>> fetchLatestResults() async {
     final urls = <String>[
@@ -38,20 +40,55 @@ class LottoResultsImportService {
     final fromDate = DateTime(now.year, now.month, now.day)
         .subtract(Duration(days: weeks * 7 + 3));
 
-    final combined = <DrawResult>[];
-
+    // Primaerer Pfad fuer die letzten Wochen: ein kompaktes JSON-Archiv.
+    // Das ist robuster als HTML-Seiten, die ihre Struktur oft aendern.
     try {
-      combined.addAll(await fetchLatestResults());
+      final body = await _download(_lottoArchiveTidyJsonUrl);
+      final jsonResults = _parseTidyArchiveJson(body);
+      final recent = _normalizeResults(jsonResults)
+          .where((draw) => !draw.drawDate.isBefore(fromDate))
+          .toList()
+        ..sort((a, b) => b.drawDate.compareTo(a.drawDate));
+
+      if (recent.isNotEmpty) return recent;
     } catch (_) {
-      // Fallbacks unten versuchen weiter Daten zu laden.
+      // Falls das JSON nicht erreichbar ist, laufen die bestehenden HTML-Fallbacks.
     }
 
-    final years = <int>{now.year, fromDate.year}.toList()..sort((a, b) => b.compareTo(a));
-    for (final year in years) {
+    // Fallback: HTML-Quellen. Schnell begrenzt, damit die App nicht lange blockiert.
+    final years = <int>{now.year, fromDate.year}.toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    final urls = <String>[
+      _lottoNetLatestUrl,
+      _lottosterLatestUrl,
+      for (final year in years) ...[
+        '$_dielottozahlendeYearUrl/$year',
+        '$_lottozahlenOnlineArchiveUrl?j=$year',
+        'https://www.lotto.net/de/deutsches-lotto/ergebnisse/$year',
+      ],
+    ];
+
+    final combined = <DrawResult>[];
+    Object? lastError;
+
+    for (final url in urls) {
       try {
-        combined.addAll(await fetchYearResults(year));
-      } catch (_) {
-        // Einzelne Quellen/Jahre duerfen fehlschlagen, solange andere Daten liefern.
+        final body = await _download(url);
+        final parsed = _parseResultsFromHtml(body);
+        final valid = _normalizeResults(parsed)
+            .where((draw) => !draw.drawDate.isBefore(fromDate))
+            .toList();
+        if (valid.isNotEmpty) combined.addAll(valid);
+
+        final normalized = _normalizeResults(combined)
+            .where((draw) => !draw.drawDate.isBefore(fromDate))
+            .toList()
+          ..sort((a, b) => b.drawDate.compareTo(a.drawDate));
+
+        if (normalized.length >= weeks * 2 - 1) return normalized;
+      } catch (error) {
+        lastError = error;
       }
     }
 
@@ -61,7 +98,9 @@ class LottoResultsImportService {
       ..sort((a, b) => b.drawDate.compareTo(a.drawDate));
 
     if (recent.isEmpty) {
-      throw Exception('Keine aktuellen Ziehungen der letzten $weeks Wochen gefunden.');
+      throw Exception(
+        'Keine aktuellen Ziehungen der letzten $weeks Wochen gefunden. ${lastError ?? ''}',
+      );
     }
 
     return recent;
@@ -127,7 +166,7 @@ Future<String> _download(String url) async {
       request.headers.set(HttpHeaders.acceptLanguageHeader, 'de-DE,de;q=0.9,en;q=0.8');
       request.headers.set(HttpHeaders.cacheControlHeader, 'no-cache');
 
-      final response = await request.close().timeout(const Duration(seconds: 20));
+      final response = await request.close().timeout(const Duration(seconds: 12));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('HTTP ${response.statusCode} bei $url');
       }
@@ -135,11 +174,85 @@ Future<String> _download(String url) async {
       final bytes = await response
           .expand((chunk) => chunk)
           .toList()
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 15));
       return utf8.decode(bytes, allowMalformed: true);
     } finally {
       client.close(force: true);
     }
+  }
+
+
+  List<DrawResult> _parseTidyArchiveJson(String body) {
+    final decoded = jsonDecode(body);
+    if (decoded is! List) return const [];
+
+    final grouped = <String, _ArchiveDrawBuilder>{};
+
+    for (final item in decoded) {
+      if (item is! Map) continue;
+
+      final date = _parseArchiveDate(item['date']?.toString());
+      if (date == null) continue;
+
+      final variable = (item['variable'] ?? item['name'] ?? item['type'] ?? '')
+          .toString()
+          .toLowerCase();
+      final value = int.tryParse((item['value'] ?? '').toString());
+      if (value == null) continue;
+
+      final key = _dateKey(date);
+      final builder = grouped.putIfAbsent(key, () => _ArchiveDrawBuilder(date));
+
+      if (variable.contains('lottozahl') || variable == 'zahl' || variable.contains('number')) {
+        if (value >= 1 && value <= 49) builder.numbers.add(value);
+      } else if (variable.contains('superzahl') || variable.contains('zusatzzahl')) {
+        if (value >= 0 && value <= 9) builder.superNumber = value;
+      }
+    }
+
+    final results = <DrawResult>[];
+    for (final builder in grouped.values) {
+      final numbers = _normalizeMainNumbers(builder.numbers);
+      if (numbers.length != 6) continue;
+      results.add(
+        DrawResult(
+          id: _buildStableId(builder.date, numbers),
+          drawDate: builder.date,
+          numbers: numbers,
+          superNumber: builder.superNumber,
+        ),
+      );
+    }
+
+    return _normalizeResults(results);
+  }
+
+  DateTime? _parseArchiveDate(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final value = raw.trim();
+
+    final iso = RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(value);
+    if (iso != null) {
+      final year = int.tryParse(iso.group(1) ?? '');
+      final month = int.tryParse(iso.group(2) ?? '');
+      final day = int.tryParse(iso.group(3) ?? '');
+      if (year != null && month != null && day != null) {
+        return DateTime(year, month, day);
+      }
+    }
+
+    final german = RegExp(r'^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$').firstMatch(value);
+    if (german != null) {
+      final day = int.tryParse(german.group(1) ?? '');
+      final month = int.tryParse(german.group(2) ?? '');
+      var year = int.tryParse(german.group(3) ?? '');
+      if (year != null && year < 100) year += 2000;
+      if (year != null && month != null && day != null) {
+        return DateTime(year, month, day);
+      }
+    }
+
+    return null;
   }
 
   List<DrawResult> _parseResultsFromHtml(String html) {
@@ -598,6 +711,14 @@ Future<String> _download(String url) async {
         return null;
     }
   }
+}
+
+class _ArchiveDrawBuilder {
+  _ArchiveDrawBuilder(this.date);
+
+  final DateTime date;
+  final List<int> numbers = <int>[];
+  int? superNumber;
 }
 
 class _DrawHeading {
