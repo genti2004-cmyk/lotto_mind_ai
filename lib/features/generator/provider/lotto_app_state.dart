@@ -2442,12 +2442,18 @@ bool _sameCalendarDate(DateTime a, DateTime b) {
     notifyListeners();
   }
 
-  Future<int> autoImportLatestDraws() async {
+  Future<int> autoImportLatestDraws({bool enrichAdditionalGames = true}) async {
     const recentWeeks = 8;
-    _beginImport(label: 'Automatische Prüfung', totalYears: 1);
+    final label = enrichAdditionalGames
+        ? 'Zusatzdaten prüfen'
+        : 'Daten aktualisieren';
+    _beginImport(label: label, totalYears: enrichAdditionalGames ? 2 : 1);
 
     try {
-      final all = await _importService.fetchRecentResults(weeks: recentWeeks);
+      final all = await _importService.fetchRecentResults(
+        weeks: recentWeeks,
+        enrichAdditionalGames: enrichAdditionalGames,
+      );
 
       final toImport = all.where(
             (d) =>
@@ -2456,12 +2462,19 @@ bool _sameCalendarDate(DateTime a, DateTime b) {
       ).toList()
         ..sort((a, b) => b.drawDate.compareTo(a.drawDate));
 
+      _importProcessedYears = enrichAdditionalGames ? 1 : 1;
+      notifyListeners();
+
       final inserted = await _mergeImportedDraws(toImport);
 
-      _importProcessedYears = 1;
+      _importProcessedYears = _importTotalYears;
       _lastImportMessage = inserted == 0
-          ? 'Automatische Prüfung: keine neuen Ziehungen der letzten $recentWeeks Wochen.'
-          : 'Automatische Prüfung: $inserted Ziehung(en) der letzten $recentWeeks Wochen importiert.';
+          ? enrichAdditionalGames
+              ? 'Zusatzdaten geprüft: keine neuen sicheren Zusatzdaten gefunden. Vorhandene Daten bleiben erhalten.'
+              : 'Daten aktualisiert: keine neuen Ziehungen der letzten $recentWeeks Wochen. Vorhandene Daten bleiben erhalten.'
+          : enrichAdditionalGames
+              ? 'Zusatzdaten geprüft: $inserted Ziehung(en) aktualisiert. Fehlende Zusatzlotterien werden als nicht verfügbar angezeigt.'
+              : 'Daten aktualisiert: $inserted Ziehung(en) mit Lottozahlen und Superzahl importiert.';
       return inserted;
     } finally {
       _finishImport();

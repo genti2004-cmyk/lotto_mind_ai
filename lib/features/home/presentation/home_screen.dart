@@ -22,6 +22,11 @@ class HomeScreen extends StatelessWidget {
     final latestSaturday = state.saturdayDrawResults.isEmpty
         ? null
         : state.saturdayDrawResults.first;
+    final latestDrawDate = _latestDrawDate(state.drawResults);
+    final dataAgeDays = latestDrawDate == null
+        ? null
+        : DateTime.now().difference(latestDrawDate).inDays;
+    final dataNeedsUpdate = latestDrawDate == null || (dataAgeDays ?? 9999) > 7;
     final tip = state.lastGeneratedTip;
     final superNumber = state.lastGeneratedSuperNumber;
     final hasTip = tip != null && tip.isNotEmpty;
@@ -44,10 +49,20 @@ class HomeScreen extends StatelessWidget {
               drawCount: state.drawResults.length,
             ),
             const SizedBox(height: 14),
+            _DataFreshnessCard(
+              latestDrawDate: latestDrawDate,
+              dataAgeDays: dataAgeDays,
+              dataNeedsUpdate: dataNeedsUpdate,
+              hasWednesday: latestWednesday != null,
+              hasSaturday: latestSaturday != null,
+              onUpdateDraws: () => _open(context, const DrawResultsScreen()),
+            ),
+            const SizedBox(height: 14),
             _NextStepAssistantCard(
               hasDraws: hasDraws,
               hasSavedTips: hasSavedTips,
               hasSelectedDraw: hasSelectedDraw,
+              dataNeedsUpdate: dataNeedsUpdate,
               tipsCount: tipsCount,
               onUpdateDraws: () => _open(context, const DrawResultsScreen()),
               onCreateTip: () => _open(context, const GeneratorScreen()),
@@ -167,10 +182,114 @@ class _StatusCard extends StatelessWidget {
 }
 
 
+class _DataFreshnessCard extends StatelessWidget {
+  final DateTime? latestDrawDate;
+  final int? dataAgeDays;
+  final bool dataNeedsUpdate;
+  final bool hasWednesday;
+  final bool hasSaturday;
+  final VoidCallback onUpdateDraws;
+
+  const _DataFreshnessCard({
+    required this.latestDrawDate,
+    required this.dataAgeDays,
+    required this.dataNeedsUpdate,
+    required this.hasWednesday,
+    required this.hasSaturday,
+    required this.onUpdateDraws,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = dataNeedsUpdate ? 'Daten aktualisieren empfohlen' : 'Daten wirken aktuell';
+    final subtitle = latestDrawDate == null
+        ? 'Es sind noch keine Ziehungen gespeichert. Aktualisiere zuerst die Daten.'
+        : dataNeedsUpdate
+            ? 'Die neueste gespeicherte Ziehung ist ${dataAgeDays ?? '-'} Tage alt.'
+            : 'Neueste Ziehung: ${_formatDate(latestDrawDate!)}.';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: dataNeedsUpdate ? AppColors.warningSoft : AppColors.successSoft,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: dataNeedsUpdate
+              ? AppColors.warning.withValues(alpha: 0.24)
+              : AppColors.success.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                dataNeedsUpdate ? Icons.sync_problem_rounded : Icons.verified_rounded,
+                color: dataNeedsUpdate ? AppColors.warning : AppColors.success,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _InfoLine(label: 'Mittwoch-Daten', value: hasWednesday ? 'vorhanden' : 'fehlen'),
+          const SizedBox(height: 8),
+          _InfoLine(label: 'Samstag-Daten', value: hasSaturday ? 'vorhanden' : 'fehlen'),
+          if (dataNeedsUpdate) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onUpdateDraws,
+                icon: const Icon(Icons.update_rounded, size: 18),
+                label: const Text('Ziehungen jetzt aktualisieren'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(color: AppColors.primary.withValues(alpha: 0.35)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+
 class _NextStepAssistantCard extends StatelessWidget {
   final bool hasDraws;
   final bool hasSavedTips;
   final bool hasSelectedDraw;
+  final bool dataNeedsUpdate;
   final int tipsCount;
   final VoidCallback onUpdateDraws;
   final VoidCallback onCreateTip;
@@ -180,6 +299,7 @@ class _NextStepAssistantCard extends StatelessWidget {
     required this.hasDraws,
     required this.hasSavedTips,
     required this.hasSelectedDraw,
+    required this.dataNeedsUpdate,
     required this.tipsCount,
     required this.onUpdateDraws,
     required this.onCreateTip,
@@ -300,6 +420,15 @@ class _NextStepAssistantCard extends StatelessWidget {
         description: 'Es fehlen noch Ziehungen. Aktualisiere zuerst die Daten, damit Tipps und Prüfungen sinnvoll funktionieren.',
         buttonLabel: 'Ziehungen aktualisieren',
         icon: Icons.update_rounded,
+        onTap: onUpdateDraws,
+      );
+    }
+
+    if (dataNeedsUpdate) {
+      return _AssistantStep(
+        description: 'Die gespeicherten Ziehungen wirken nicht mehr ganz aktuell. Aktualisiere die Daten, bevor du neue Tipps bewertest.',
+        buttonLabel: 'Daten aktualisieren',
+        icon: Icons.sync_rounded,
         onTap: onUpdateDraws,
       );
     }
@@ -714,6 +843,18 @@ class _InfoLine extends StatelessWidget {
       },
     );
   }
+}
+
+DateTime? _latestDrawDate(List<DrawResult> draws) {
+  if (draws.isEmpty) return null;
+  DateTime? latest;
+  for (final draw in draws) {
+    final date = draw.drawDate;
+    if (latest == null || date.isAfter(latest)) {
+      latest = date;
+    }
+  }
+  return latest;
 }
 
 String _formatDate(DateTime date) => AppFormatUtils.date(date);

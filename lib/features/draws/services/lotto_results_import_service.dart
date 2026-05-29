@@ -5,12 +5,12 @@ import '../domain/draw_result.dart';
 
 /// Stabiler Import-Service fuer Lotto 6aus49.
 ///
-/// Ziel dieser Version:
-/// - nur gueltige Mittwoch-/Samstag-Ziehungen uebernehmen
-/// - Hauptzahlen immer als 6 eindeutige Zahlen 1..49 validieren
-/// - Superzahl 0..9 validieren
-/// - Spiel 77 / Super 6 als reine Ziffernfolgen validieren
-/// - Import-Ergebnis deduplizieren und immer neu -> alt sortieren
+/// Grundprinzip ab v51:
+/// - Lottozahlen + Superzahl sind Pflichtdaten und werden schnell/stabil geladen.
+/// - Spiel 77 / SUPER 6 sind Zusatzdaten und werden nur uebernommen, wenn sie sicher gefunden werden.
+/// - Fehlende Zusatzdaten duerfen Import, Analyse oder Generator nie blockieren.
+/// - Keine kuenstlichen oder geschaetzten Zusatzlotterie-Daten.
+/// - Import-Ergebnis wird dedupliziert und immer neu -> alt sortiert
 class LottoResultsImportService {
   static const String _dielottozahlendeYearUrl =
       'https://www.dielottozahlende.net/lotto-6-aus-49/year';
@@ -35,7 +35,10 @@ class LottoResultsImportService {
     return _downloadAndParseAllWorking(urls);
   }
 
-  Future<List<DrawResult>> fetchRecentResults({int weeks = 8}) async {
+  Future<List<DrawResult>> fetchRecentResults({
+    int weeks = 8,
+    bool enrichAdditionalGames = true,
+  }) async {
     final now = DateTime.now();
     final fromDate = DateTime(now.year, now.month, now.day)
         .subtract(Duration(days: weeks * 7 + 3));
@@ -50,7 +53,13 @@ class LottoResultsImportService {
           .toList()
         ..sort((a, b) => b.drawDate.compareTo(a.drawDate));
 
-      if (recent.isNotEmpty) return recent;
+      if (recent.isNotEmpty) {
+        if (!enrichAdditionalGames) return recent;
+        return _enrichWithAdditionalGames(
+          recent,
+          fromDate: fromDate,
+        );
+      }
     } catch (_) {
       // Falls das JSON nicht erreichbar ist, laufen die bestehenden HTML-Fallbacks.
     }
@@ -106,6 +115,87 @@ class LottoResultsImportService {
     return recent;
   }
 
+
+  Future<List<DrawResult>> _enrichWithAdditionalGames(
+    List<DrawResult> base, {
+    required DateTime fromDate,
+  }) async {
+    if (base.isEmpty) return base;
+
+    var enriched = _normalizeResults(base);
+    final needsAdditional = enriched.any(
+      (draw) => draw.spiel77 == null || draw.super6 == null,
+    );
+    if (!needsAdditional) return enriched;
+
+    // Zusatzlotterien sind optional. Deshalb nur kurze, aktuelle Quellen pruefen
+    // und keine langen Archivketten starten. Die Hauptdaten aus dem JSON-Archiv
+    // bleiben immer fuehrend.
+    final urls = <String>[
+      _lottoNetLatestUrl,
+      _lottosterLatestUrl,
+    ];
+
+    for (final url in urls) {
+      try {
+        final body = await _downloadOptional(url);
+        final htmlDraws = _parseResultsFromHtml(body)
+            .where((draw) => !draw.drawDate.isBefore(fromDate))
+            .toList();
+        final additionalOnly = _parseAdditionalGamesFromHtml(body)
+            .where((draw) => !draw.drawDate.isBefore(fromDate))
+            .toList();
+
+        enriched = _mergeAdditionalGameData(
+          enriched,
+          <DrawResult>[
+            ...htmlDraws,
+            ...additionalOnly,
+          ],
+        );
+
+        final stillMissing = enriched.any(
+          (draw) => draw.spiel77 == null || draw.super6 == null,
+        );
+        if (!stillMissing) break;
+      } catch (_) {
+        // Zusatzdaten sind optional. Fehlende HTML-Daten duerfen den stabilen
+        // JSON-Import nicht blockieren.
+      }
+    }
+
+    return enriched..sort((a, b) => b.drawDate.compareTo(a.drawDate));
+  }
+
+  List<DrawResult> _mergeAdditionalGameData(
+    List<DrawResult> base,
+    List<DrawResult> additional,
+  ) {
+    if (additional.isEmpty) return base;
+
+    final byDate = <String, DrawResult>{
+      for (final draw in base) _dateKey(draw.drawDate): draw,
+    };
+
+    for (final incoming in additional) {
+      final key = _dateKey(incoming.drawDate);
+      final current = byDate[key];
+      if (current == null) continue;
+
+      final spiel77 = current.spiel77 ?? _normalizeDigitGame(incoming.spiel77, 7);
+      final super6 = current.super6 ?? _normalizeDigitGame(incoming.super6, 6);
+      final superNumber = current.superNumber ?? _normalizeSuperNumber(incoming.superNumber);
+
+      byDate[key] = current.copyWith(
+        superNumber: superNumber,
+        spiel77: spiel77,
+        super6: super6,
+      );
+    }
+
+    return byDate.values.toList()..sort((a, b) => b.drawDate.compareTo(a.drawDate));
+  }
+
   Future<List<DrawResult>> fetchYearResults(int year) async {
     final urls = <String>[
       '$_dielottozahlendeYearUrl/$year',
@@ -143,6 +233,43 @@ class LottoResultsImportService {
     if (normalized.isNotEmpty) return normalized;
 
     throw Exception('Import fehlgeschlagen: ${lastError ?? 'keine gueltigen Ziehungen gefunden'}');
+  }
+
+
+  Future<String> _downloadOptional(String url) async {
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 5)
+      ..idleTimeout = const Duration(seconds: 5)
+      ..autoUncompress = true;
+
+    try {
+      final request = await client.getUrl(Uri.parse(url));
+      request.followRedirects = true;
+      request.maxRedirects = 3;
+      request.headers.set(
+        HttpHeaders.userAgentHeader,
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+      );
+      request.headers.set(
+        HttpHeaders.acceptHeader,
+        'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      );
+      request.headers.set(HttpHeaders.acceptLanguageHeader, 'de-DE,de;q=0.9,en;q=0.8');
+      request.headers.set(HttpHeaders.cacheControlHeader, 'no-cache');
+
+      final response = await request.close().timeout(const Duration(seconds: 6));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('HTTP ${response.statusCode} bei $url');
+      }
+
+      final bytes = await response
+          .expand((chunk) => chunk)
+          .toList()
+          .timeout(const Duration(seconds: 7));
+      return utf8.decode(bytes, allowMalformed: true);
+    } finally {
+      client.close(force: true);
+    }
   }
 
 Future<String> _download(String url) async {
@@ -197,16 +324,25 @@ Future<String> _download(String url) async {
       final variable = (item['variable'] ?? item['name'] ?? item['type'] ?? '')
           .toString()
           .toLowerCase();
-      final value = int.tryParse((item['value'] ?? '').toString());
-      if (value == null) continue;
+      final rawValue = (item['value'] ?? '').toString();
+      final value = int.tryParse(rawValue);
+      final digitValue = rawValue.replaceAll(RegExp(r'\D'), '');
 
       final key = _dateKey(date);
       final builder = grouped.putIfAbsent(key, () => _ArchiveDrawBuilder(date));
 
-      if (variable.contains('lottozahl') || variable == 'zahl' || variable.contains('number')) {
-        if (value >= 1 && value <= 49) builder.numbers.add(value);
+      if (variable.contains('spiel') || variable.contains('spiel77')) {
+        builder.spiel77 = _normalizeDigitGame(digitValue, 7) ?? builder.spiel77;
+      } else if (variable.contains('super 6') ||
+          variable.contains('super6') ||
+          variable.contains('super_6')) {
+        builder.super6 = _normalizeDigitGame(digitValue, 6) ?? builder.super6;
+      } else if (variable.contains('lottozahl') ||
+          variable == 'zahl' ||
+          variable.contains('number')) {
+        if (value != null && value >= 1 && value <= 49) builder.numbers.add(value);
       } else if (variable.contains('superzahl') || variable.contains('zusatzzahl')) {
-        if (value >= 0 && value <= 9) builder.superNumber = value;
+        if (value != null && value >= 0 && value <= 9) builder.superNumber = value;
       }
     }
 
@@ -220,6 +356,8 @@ Future<String> _download(String url) async {
           drawDate: builder.date,
           numbers: numbers,
           superNumber: builder.superNumber,
+          spiel77: builder.spiel77,
+          super6: builder.super6,
         ),
       );
     }
@@ -286,6 +424,36 @@ Future<String> _download(String url) async {
     }
 
     return _normalizeResults(results);
+  }
+
+
+  List<DrawResult> _parseAdditionalGamesFromHtml(String html) {
+    final text = _htmlToPlainText(html);
+    final headings = _findHeadings(text);
+    final results = <DrawResult>[];
+
+    for (var i = 0; i < headings.length; i++) {
+      final heading = headings[i];
+      final start = heading.end;
+      final end = i + 1 < headings.length ? headings[i + 1].start : text.length;
+      final block = text.substring(start, end);
+
+      final spiel77 = _extractSpiel77(block);
+      final super6 = _extractSuper6(block);
+      if (spiel77 == null && super6 == null) continue;
+
+      results.add(
+        DrawResult(
+          id: 'additional-${_dateKey(heading.drawDate)}',
+          drawDate: heading.drawDate,
+          numbers: const [],
+          spiel77: spiel77,
+          super6: super6,
+        ),
+      );
+    }
+
+    return results;
   }
 
   List<DrawResult> _normalizeResults(List<DrawResult> input) {
@@ -608,16 +776,40 @@ Future<String> _download(String url) async {
       }) {
     for (final label in labels) {
       final labelPattern = RegExp.escape(label).replaceAll(r'\ ', r'\s*');
+      final patterns = <RegExp>[
+        RegExp(
+          '$labelPattern\\s*[:\\-]?\\s*([0-9](?:\\s*[0-9]){${length - 1}})',
+          caseSensitive: false,
+        ),
+        RegExp(
+          '$labelPattern\\s*[:\\-]?\\s*([0-9]{$length})',
+          caseSensitive: false,
+        ),
+      ];
+
+      for (final pattern in patterns) {
+        final match = pattern.firstMatch(block);
+        if (match == null) continue;
+        final digits = (match.group(1) ?? '').replaceAll(RegExp(r'\D'), '');
+        final normalized = _normalizeDigitGame(digits, length);
+        if (normalized != null) return normalized;
+      }
+    }
+
+    // Manche Seiten schreiben Zusatzlotterien in Tabellenzeilen, bei denen
+    // zwischen Label und Wert noch Text wie "Gewinnzahl" steht.
+    for (final label in labels) {
+      final labelPattern = RegExp.escape(label).replaceAll(r'\ ', r'\s*');
       final match = RegExp(
-        '$labelPattern\\s*[:\\-]?\\s*([0-9](?:\\s*[0-9]){${length - 1}})',
+        '$labelPattern[^0-9]{0,80}([0-9](?:\\s*[0-9]){${length - 1}}|[0-9]{$length})',
         caseSensitive: false,
       ).firstMatch(block);
-
       if (match == null) continue;
       final digits = (match.group(1) ?? '').replaceAll(RegExp(r'\D'), '');
       final normalized = _normalizeDigitGame(digits, length);
       if (normalized != null) return normalized;
     }
+
     return null;
   }
 
@@ -719,6 +911,8 @@ class _ArchiveDrawBuilder {
   final DateTime date;
   final List<int> numbers = <int>[];
   int? superNumber;
+  String? spiel77;
+  String? super6;
 }
 
 class _DrawHeading {

@@ -215,7 +215,7 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
               isImporting: state.isImporting,
               progress: state.importProgress,
               progressLabel: state.importCurrentYear == null
-                  ? 'Import läuft'
+                  ? (state.importLabel ?? 'Import läuft')
                   : 'Jahr ${state.importCurrentYear} • ${state.importProcessedYears}/${state.importTotalYears}',
             ),
 
@@ -238,20 +238,54 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
               ),
 
             _Panel(
-              title: 'Ziehungen aktualisieren',
+              title: 'Daten aktualisieren',
               subtitle:
-              'Die letzten Wochen schnell laden oder historische Daten nachziehen',
+              'Echte Lottozahlen und Superzahl zuerst. Zusatzlotterien nur, wenn sie sicher verfügbar sind.',
               child: Column(
                 children: [
-                  PrimaryButton(
-                    label: 'Letzte 8 Wochen suchen',
-                    icon: Icons.sync_rounded,
-                    onPressed: state.isImporting
-                        ? null
-                        : () => _runImport(
-                          () => context
-                          .read<LottoAppState>()
-                          .autoImportLatestDraws(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: PrimaryButton(
+                          label: 'Daten aktualisieren',
+                          icon: Icons.flash_on_rounded,
+                          onPressed: state.isImporting
+                              ? null
+                              : () => _runImport(
+                                    () => context
+                                        .read<LottoAppState>()
+                                        .autoImportLatestDraws(
+                                          enrichAdditionalGames: false,
+                                        ),
+                                  ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: PrimaryButton(
+                          label: 'Zusatzdaten prüfen',
+                          icon: Icons.sync_rounded,
+                          onPressed: state.isImporting
+                              ? null
+                              : () => _runImport(
+                                    () => context
+                                        .read<LottoAppState>()
+                                        .autoImportLatestDraws(
+                                          enrichAdditionalGames: true,
+                                        ),
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Daten aktualisieren lädt Lottozahlen + Superzahl stabil über das JSON-Archiv. Spiel 77 / SUPER 6 sind optionale Zusatzdaten und werden nur ergänzt, wenn sie sicher gefunden werden.',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      height: 1.35,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -299,7 +333,7 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
                     const SizedBox(height: 8),
                     Text(
                       state.importCurrentYear == null
-                          ? 'Suche läuft… bitte kurz warten.'
+                          ? (state.importLabel ?? 'Suche läuft… bitte kurz warten.')
                           : 'Jahr ${state.importCurrentYear} • ${state.importProcessedYears}/${state.importTotalYears}',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
@@ -308,7 +342,7 @@ class _DrawResultsScreenState extends State<DrawResultsScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Der Import ist gesperrt, bis die aktuelle Suche fertig ist.',
+                      'Der Import ist gesperrt, bis die aktuelle Suche fertig ist. Zusatzdaten sind optional und werden nicht erzwungen.',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
@@ -514,7 +548,7 @@ class _DataQualityCard extends StatelessWidget {
           const SizedBox(height: 12),
           _QualityRow(
             label: 'Importquelle',
-            value: 'JSON-Archiv + HTML-Fallback',
+            value: 'JSON-Archiv für Pflichtdaten, Zusatzdaten optional',
           ),
           const SizedBox(height: 8),
           _QualityRow(
@@ -538,6 +572,11 @@ class _DataQualityCard extends StatelessWidget {
             label: 'Gespeicherte Ziehungen',
             value: '$totalDraws',
           ),
+          const SizedBox(height: 8),
+          _QualityRow(
+            label: 'Zusatzlotterien',
+            value: _additionalQualityLabel(latestDraw),
+          ),
           if (lastImportMessage != null && lastImportMessage!.trim().isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
@@ -552,7 +591,7 @@ class _DataQualityCard extends StatelessWidget {
           ],
           const SizedBox(height: 12),
           const Text(
-            'Hinweis: Ein grüner Status bedeutet nur, dass die Datenbasis für Analyse und Tipp-Erstellung plausibel aktuell ist. Es ist keine Gewinnzusage.',
+            'Hinweis: Die App arbeitet mit echten Ziehungsdaten. Fehlende Spiel 77 / SUPER 6 Werte werden ehrlich als nicht verfügbar angezeigt und nicht künstlich ergänzt.',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
@@ -841,9 +880,9 @@ class _LatestDrawCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _InfoGrid(
-            superNumber: draw.superNumber?.toString() ?? '-',
-            spiel77: draw.spiel77 ?? '-',
-            super6: draw.super6 ?? '-',
+            superNumber: draw.superNumber?.toString() ?? 'nicht verfügbar',
+            spiel77: _formatOptionalGame(draw.spiel77),
+            super6: _formatOptionalGame(draw.super6),
           ),
         ],
       ),
@@ -1164,6 +1203,22 @@ class _EmptyText extends StatelessWidget {
       ),
     );
   }
+}
+
+
+String _formatOptionalGame(String? value) {
+  final clean = value?.trim();
+  if (clean == null || clean.isEmpty) return 'nicht verfügbar';
+  return clean;
+}
+
+String _additionalQualityLabel(DrawResult? latestDraw) {
+  if (latestDraw == null) return 'nicht verfügbar';
+  final hasSpiel77 = latestDraw.spiel77 != null && latestDraw.spiel77!.trim().isNotEmpty;
+  final hasSuper6 = latestDraw.super6 != null && latestDraw.super6!.trim().isNotEmpty;
+  if (hasSpiel77 && hasSuper6) return 'vorhanden';
+  if (hasSpiel77 || hasSuper6) return 'teilweise verfügbar';
+  return 'nicht verfügbar';
 }
 
 String _formatDate(DateTime value) => AppFormatUtils.date(value);
